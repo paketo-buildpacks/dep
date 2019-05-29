@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/cloudfoundry/dep-cnb/dep"
+	"github.com/cloudfoundry/dep-cnb/utils"
 	"os"
 
 	"github.com/buildpack/libbuildpack/buildplan"
@@ -26,5 +28,20 @@ func main() {
 }
 
 func runBuild(context build.Build) (int, error) {
-	return context.Success(buildplan.BuildPlan{}) // TODO implementation
+	context.Logger.FirstLine(context.Logger.PrettyIdentity(context.Buildpack))
+
+	runner := &utils.Command{}
+
+	depContributor, willContribute, err := dep.NewContributor(context, runner)
+	if err != nil {
+		return context.Failure(102), err
+	}
+
+	if willContribute {
+		if err := depContributor.Contribute(); err != nil {
+			return context.Failure(103), err
+		}
+	}
+
+	return context.Success(buildplan.BuildPlan{})
 }

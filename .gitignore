@@ -1,0 +1,4 @@
+.bin
+*.tgz
+bin/
+dep-cnb_*

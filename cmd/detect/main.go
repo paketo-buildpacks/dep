@@ -23,7 +23,7 @@ func main() {
 
 	code, err := runDetect(context)
 	if err != nil {
-		context.Logger.Info(err.Error())
+		_, _ = fmt.Fprintf(os.Stderr, "failed detection: %s", err)
 	}
 
 	os.Exit(code)

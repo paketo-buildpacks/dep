@@ -37,26 +37,19 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("Gopkg.toml exists", func() {
-		it("should pass", func() {
+		it("should pass and add to dep to the build plan", func() {
 			goPkgString := fmt.Sprintf("This is a go pkg toml")
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
 
 			code, err := runDetect(factory.Detect)
 			Expect(code).To(Equal(detect.PassStatusCode))
 			Expect(err).ToNot(HaveOccurred())
-		})
-
-		it("should add to build plan", func() {
-			goPkgString := fmt.Sprintf("This is a go pkg toml")
-			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
 
 			plan := buildplan.BuildPlan{
 				dep.Dependency: buildplan.Dependency{
 					Metadata: buildplan.Metadata{"build": true},
 				},
 			}
-
-			_, _ = runDetect(factory.Detect)
 
 			Expect(factory.Output).To(Equal(plan))
 		})
