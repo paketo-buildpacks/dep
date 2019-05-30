@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/buildpack/libbuildpack/buildplan"
-	"github.com/cloudfoundry/dep-cnb/dep"
 	"path/filepath"
 	"testing"
+
+	"github.com/buildpack/libbuildpack/buildplan"
+	"github.com/cloudfoundry/dep-cnb/dep"
 
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/test"

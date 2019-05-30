@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/cloudfoundry/dep-cnb/dep"
 	"github.com/cloudfoundry/dep-cnb/utils"
-	"os"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 

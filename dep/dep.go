@@ -4,16 +4,17 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/cloudfoundry/libcfbuildpack/build"
-	"github.com/cloudfoundry/libcfbuildpack/helper"
-	"github.com/cloudfoundry/libcfbuildpack/layers"
-	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/cloudfoundry/libcfbuildpack/build"
+	"github.com/cloudfoundry/libcfbuildpack/helper"
+	"github.com/cloudfoundry/libcfbuildpack/layers"
+	"github.com/cloudfoundry/libcfbuildpack/logger"
 )
 
 const (
@@ -77,7 +78,7 @@ func NewContributor(context build.Build, runner Runner) (Contributor, bool, erro
 		logger:         context.Logger,
 	}
 
-	appDirName, ok :=  importPath.(string)
+	appDirName, ok := importPath.(string)
 	if !ok {
 		return Contributor{}, false, nil
 	}
@@ -166,7 +167,7 @@ func (c *Contributor) ContributeBinary() error {
 			fmt.Sprintf("GOPATH=%s", c.packagesLayer.Root),
 			fmt.Sprintf("GOBIN=%s", layer.Root),
 		}, os.Stdout, os.Stderr,
-		"go", args...)
+			"go", args...)
 	}, layers.Launch)
 }
 
@@ -208,7 +209,6 @@ func (c Contributor) DeleteAppDir() error {
 
 	return nil
 }
-
 
 func isVendored(context build.Build) (bool, error) {
 	vendorPath := filepath.Join(context.Application.Root, "vendor")

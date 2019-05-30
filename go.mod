@@ -3,6 +3,7 @@ module github.com/cloudfoundry/dep-cnb
 go 1.12
 
 require (
+	github.com/ZiCog/shiny-thing v0.0.0-20121130081921-e9e19444ccf5 // indirect
 	github.com/buildpack/libbuildpack v1.18.0
 	github.com/cloudfoundry/dagger v0.0.0-20190521201554-93417312948c
 	github.com/cloudfoundry/libcfbuildpack v1.59.0

@@ -2,16 +2,17 @@ package dep_test
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
+
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/dep-cnb/dep"
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	"github.com/golang/mock/gomock"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"testing"
 
 	. "github.com/onsi/gomega"
 )

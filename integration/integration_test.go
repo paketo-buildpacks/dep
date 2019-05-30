@@ -20,7 +20,9 @@ func TestIntegration(t *testing.T) {
 
 	bpDir, err := dagger.FindBPRoot()
 	Expect(err).NotTo(HaveOccurred())
+
 	depURI, err = dagger.PackageBuildpack(bpDir)
+	Expect(err).NotTo(HaveOccurred())
 	defer os.RemoveAll(depURI)
 
 	goURI, err = dagger.GetLatestBuildpack("go-cnb")

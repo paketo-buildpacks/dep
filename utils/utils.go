@@ -8,7 +8,7 @@ import (
 	"os/exec"
 )
 
-type Command struct {}
+type Command struct{}
 
 func (c *Command) Run(dir, bin string, args ...string) (string, error) {
 	logs := &bytes.Buffer{}
