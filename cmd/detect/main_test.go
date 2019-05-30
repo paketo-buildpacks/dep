@@ -36,8 +36,22 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
-	when("Gopkg.toml exists", func() {
-		it("should pass and add to dep to the build plan", func() {
+	when("Gopkg.toml exists and buildpack.yml does not exist", func() {
+		it("should fail detection", func() {
+			goPkgString := fmt.Sprintf("This is a go pkg toml")
+			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
+
+			code, err := runDetect(factory.Detect)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(code).To(Equal(detect.FailStatusCode))
+		})
+	})
+
+	when("Gopkg.toml exists and buildpack.yml specifies an `import-path`", func() {
+		it("adds the `import-path` to the build plan", func() {
+			bpYmlString := "import-path: some/app"
+			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), bpYmlString)
+
 			goPkgString := fmt.Sprintf("This is a go pkg toml")
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
 
@@ -47,11 +61,25 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 			plan := buildplan.BuildPlan{
 				dep.Dependency: buildplan.Dependency{
-					Metadata: buildplan.Metadata{"build": true},
+					Metadata: buildplan.Metadata{"build": true, "import-path": "some/app"},
 				},
 			}
 
 			Expect(factory.Output).To(Equal(plan))
+		})
+	})
+
+	when("Gopkg.toml exists and buildpack.yml empty", func() {
+		it("fails to detect", func() {
+			bpYmlString := ""
+			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), bpYmlString)
+
+			goPkgString := fmt.Sprintf("This is a go pkg toml")
+			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
+
+			code, err := runDetect(factory.Detect)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(code).To(Equal(detect.FailStatusCode))
 		})
 	})
 }

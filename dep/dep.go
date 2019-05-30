@@ -21,6 +21,7 @@ const (
 	Packages   = "packages"
 	lockFile   = "Gopkg.lock"
 	AppBinary  = "app-binary"
+	ImportPath = "import-path"
 )
 
 type Contributor struct {
@@ -33,6 +34,7 @@ type Contributor struct {
 	goDepPackages  Identifiable
 	appDirName     string
 	installDir     string
+	vendored       bool
 }
 
 type Identifiable struct {
@@ -51,9 +53,19 @@ type Runner interface {
 }
 
 func NewContributor(context build.Build, runner Runner) (Contributor, bool, error) {
-	_, wantDependency := context.BuildPlan[Dependency]
+	dependency, wantDependency := context.BuildPlan[Dependency]
 	if !wantDependency {
 		return Contributor{}, false, nil
+	}
+
+	importPath, exists := dependency.Metadata[ImportPath]
+	if !exists {
+		return Contributor{}, false, nil
+	}
+
+	vendored, err := isVendored(context)
+	if err != nil {
+		return Contributor{}, false, err
 	}
 
 	contributor := Contributor{
@@ -61,9 +73,16 @@ func NewContributor(context build.Build, runner Runner) (Contributor, bool, erro
 		runner:         runner,
 		packagesLayer:  context.Layers.Layer(Packages),
 		appBinaryLayer: context.Layers.Layer(AppBinary),
+		vendored:       vendored,
+		logger:         context.Logger,
 	}
 
-	contributor.appDirName = "app"
+	appDirName, ok :=  importPath.(string)
+	if !ok {
+		return Contributor{}, false, nil
+	}
+
+	contributor.appDirName = appDirName
 	contributor.installDir = filepath.Join(contributor.packagesLayer.Root, "src", contributor.appDirName)
 
 	return contributor, true, nil
@@ -82,10 +101,19 @@ func (c *Contributor) Contribute() error {
 		return err
 	}
 
-	return c.ContributeStartCommand()
+	if err := c.ContributeStartCommand(); err != nil {
+		return err
+	}
+
+	return c.DeleteAppDir()
 }
 
 func (c *Contributor) ContributeDep() error {
+	if c.vendored {
+		c.logger.Info("Note: skipping dep installation due to non-empty vendor directory.")
+		return nil
+	}
+
 	deps, err := c.context.Buildpack.Dependencies()
 	if err != nil {
 		return err
@@ -100,11 +128,7 @@ func (c *Contributor) ContributeDep() error {
 
 	return c.depLayer.Contribute(func(artifact string, layer layers.DependencyLayer) error {
 		layer.Logger.SubsequentLine("Expanding to %s", layer.Root)
-		if err := helper.ExtractTarGz(artifact, layer.Root, 1); err != nil {
-			return err
-		}
-
-		return os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), c.depLayer.Root))
+		return helper.ExtractTarGz(artifact, layer.Root, 1)
 	}, layers.Build, layers.Cache)
 }
 
@@ -114,15 +138,22 @@ func (c *Contributor) ContributePackages() error {
 	}
 
 	return c.packagesLayer.Contribute(c.goDepPackages, func(layer layers.Layer) error {
-	if err := os.MkdirAll(c.installDir, 0777); err != nil {
-			return err
-		}
-
 		if err := helper.CopyDirectory(c.context.Application.Root, c.installDir); err != nil {
 			return err
 		}
 
-		return c.runner.CustomRun(c.installDir, []string{fmt.Sprintf("GOPATH=%s", c.packagesLayer.Root)}, os.Stdout, os.Stderr, "dep", "ensure")
+		if c.vendored {
+			c.logger.Info("Note: skipping `dep ensure` due to non-empty vendor directory.")
+			return nil
+		}
+
+		layer.Logger.SubsequentLine("Fetching any unsaved dependencies (using `dep ensure`)")
+		depBin := filepath.Join(c.depLayer.Root, "dep")
+		return c.runner.CustomRun(c.installDir,
+			[]string{fmt.Sprintf("GOPATH=%s", c.packagesLayer.Root)},
+			os.Stdout, os.Stderr,
+			depBin, "ensure")
+
 	}, layers.Cache)
 }
 
@@ -134,12 +165,13 @@ func (c *Contributor) ContributeBinary() error {
 		return c.runner.CustomRun(c.installDir, []string{
 			fmt.Sprintf("GOPATH=%s", c.packagesLayer.Root),
 			fmt.Sprintf("GOBIN=%s", layer.Root),
-		}, os.Stdout, os.Stderr, "go", args...)
+		}, os.Stdout, os.Stderr,
+		"go", args...)
 	}, layers.Launch)
 }
 
 func (c *Contributor) ContributeStartCommand() error {
-	appBinaryPath := filepath.Join(c.appBinaryLayer.Root, c.appDirName)
+	appBinaryPath := filepath.Join(c.appBinaryLayer.Root, filepath.Base(c.appDirName))
 	return c.context.Layers.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", appBinaryPath}}})
 }
 
@@ -162,9 +194,48 @@ func (c *Contributor) setPackagesMetadata() error {
 	return nil
 }
 
+func (c Contributor) DeleteAppDir() error {
+	files, err := ioutil.ReadDir(c.context.Application.Root)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if err := os.RemoveAll(filepath.Join(c.context.Application.Root, file.Name())); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+
+func isVendored(context build.Build) (bool, error) {
+	vendorPath := filepath.Join(context.Application.Root, "vendor")
+	vendorDirExists, err := helper.FileExists(vendorPath)
+	if err != nil {
+		return false, err
+	}
+
+	if vendorDirExists {
+		files, err := ioutil.ReadDir(vendorPath)
+		if err != nil {
+			return false, err
+		}
+
+		for _, file := range files {
+			if file.IsDir() {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}
+
 func getAppBinaryMetadata() Identifiable {
 	timeNow := strconv.FormatInt(time.Now().UnixNano(), 32)
 	hash := sha256.Sum256([]byte(timeNow))
 	checksum := hex.EncodeToString(hash[:])
-	return Identifiable{Name: "Binary", Checksum: checksum}
+	return Identifiable{Name: "App Binary", Checksum: checksum}
 }

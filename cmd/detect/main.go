@@ -5,6 +5,8 @@ import (
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/dep-cnb/dep"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -38,11 +40,39 @@ func runDetect(context detect.Detect) (int, error) {
 		return detect.FailStatusCode, fmt.Errorf(ErrorMsg)
 	}
 
-	return context.Pass(buildplan.BuildPlan{
-		dep.Dependency: buildplan.Dependency{
-			Metadata: buildplan.Metadata{
-				"build": true,
+	bpYmlFile := filepath.Join(context.Application.Root, "buildpack.yml")
+	if exists, err := helper.FileExists(bpYmlFile); err != nil {
+		return detect.FailStatusCode, errors.Wrap(err, fmt.Sprintf("error checking filepath: %s", bpYmlFile))
+	} else if exists {
+		importPath, err := parseImportPath(bpYmlFile)
+		if err != nil {
+			return detect.FailStatusCode, errors.Wrap(err, "error reading buildpack.yml")
+		}
+		if importPath == "" {
+			return context.Fail(), nil
+		}
+		return context.Pass(buildplan.BuildPlan{
+			dep.Dependency: buildplan.Dependency{
+				Metadata: buildplan.Metadata{
+					"build":       true,
+					"import-path": importPath,
+				},
 			},
-		},
-	})
+		})
+	}
+	return context.Fail(), nil
+}
+
+func parseImportPath(bpYmlFilePath string) (string, error) {
+	contents, err := ioutil.ReadFile(bpYmlFilePath)
+	if err != nil {
+		return "", err
+	}
+	bpYML := struct {
+		ImportPath string `yaml:"import-path"`
+	}{}
+	if err := yaml.Unmarshal(contents, &bpYML); err != nil {
+		return "", err
+	}
+	return bpYML.ImportPath, nil
 }
