@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,6 @@
 package layers
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -70,12 +69,6 @@ func (t TouchedLayers) Cleanup() error {
 	}
 
 	return nil
-}
-
-// String makes TouchedLayers satisfy the Stringer interface.
-func (t TouchedLayers) String() string {
-	return fmt.Sprintf("TouchedLayers{ Root: %s, logger: %s, touched: %s }",
-		t.Root, t.logger, t.touched)
 }
 
 func (t TouchedLayers) candidates() (internal.Set, error) {

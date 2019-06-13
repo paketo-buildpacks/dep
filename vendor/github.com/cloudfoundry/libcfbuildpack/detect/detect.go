@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,6 @@
 package detect
 
 import (
-	"fmt"
-
 	"github.com/buildpack/libbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
@@ -41,12 +39,6 @@ type Detect struct {
 
 	// Services represents the services bound to the application.
 	Services services.Services
-}
-
-// String makes Detect satisfy the Stringer interface.
-func (d Detect) String() string {
-	return fmt.Sprintf("Detect{ Detect: %s, Buildpack: %s, Logger: %s, Services: %s }",
-		d.Detect, d.Buildpack, d.Logger, d.Services)
 }
 
 // DefaultDetect creates a new instance of Detect using default values.  During initialization, all platform environment

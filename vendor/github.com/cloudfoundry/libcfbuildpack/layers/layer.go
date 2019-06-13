@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,6 @@
 package layers
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/buildpack/libbuildpack/layers"
@@ -159,11 +158,6 @@ func (l Layer) MetadataMatches(expected interface{}) (bool, error) {
 	}
 
 	return matches, nil
-}
-
-// String makes Layer satisfy the Stringer interface.
-func (l Layer) String() string {
-	return fmt.Sprintf("Layer{ Layer: %s, Logger: %s, touchedLayers: %s }", l.Layer, l.Logger, l.touchedLayers)
 }
 
 // Touch touches a layer, indicating that it was used and should not be removed.

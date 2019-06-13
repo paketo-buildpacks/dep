@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -90,12 +90,6 @@ func (l DownloadLayer) Artifact() (string, error) {
 	return artifact, nil
 }
 
-// String makes DownloadLayer satisfy the Stringer interface.
-func (l DownloadLayer) String() string {
-	return fmt.Sprintf("DownloadLayer{ Layer: %s, cacheLayer:%s, dependency: %s, info: %s, logger: %s }",
-		l.Layer, l.cacheLayer, l.dependency, l.info, l.logger)
-}
-
 func (l DownloadLayer) download(file string) error {
 	req, err := http.NewRequest("GET", l.dependency.URI, nil)
 	if err != nil {
@@ -103,7 +97,7 @@ func (l DownloadLayer) download(file string) error {
 	}
 
 	req.Header.Set("User-Agent", fmt.Sprintf("%s/%s", l.info.ID, l.info.Version))
-	t := &http.Transport{}
+	t := &http.Transport{Proxy: http.ProxyFromEnvironment}
 	t.RegisterProtocol("file", http.NewFileTransport(http.Dir("/")))
 
 	client := http.Client{Transport: t}

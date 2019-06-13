@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,15 +18,16 @@ package buildpack
 
 import (
 	"fmt"
-	"github.com/buildpack/libbuildpack/stack"
 	"path/filepath"
+
+	"github.com/buildpack/libbuildpack/stack"
 
 	"github.com/buildpack/libbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
 )
 
 const (
-	cacheRoot            = "dependency-cache"
+	CacheRoot            = "dependency-cache"
 	DependenciesMetadata = "dependencies"
 	DefaultVersions      = "default-versions"
 )
@@ -43,7 +44,7 @@ type Buildpack struct {
 
 // NewBuildpack creates a new instance of Buildpack from a specified buildpack.Buildpack.
 func NewBuildpack(buildpack buildpack.Buildpack, logger logger.Logger) Buildpack {
-	return Buildpack{buildpack, filepath.Join(buildpack.Root, cacheRoot), logger}
+	return Buildpack{buildpack, filepath.Join(buildpack.Root, CacheRoot), logger}
 }
 
 // Dependencies returns the collection of dependencies extracted from the generic buildpack metadata.
@@ -112,12 +113,6 @@ func (b Buildpack) PrePackage() (string, bool) {
 	return p, ok
 }
 
-// String makes Buildpack satisfy the Stringer interface.
-func (b Buildpack) String() string {
-	return fmt.Sprintf("Buildpack{ Buildpack: %s, CacheRoot: %s, logger: %s }",
-		b.Buildpack, b.CacheRoot, b.logger)
-}
-
 func (b Buildpack) RuntimeDependency(id, version string, stack stack.Stack) (Dependency, error) {
 	var err error
 
@@ -134,4 +129,10 @@ func (b Buildpack) RuntimeDependency(id, version string, stack stack.Stack) (Dep
 	}
 
 	return deps.Best(id, version, stack)
+}
+
+// String makes Buildpack satisfy the Stringer interface.
+func (b Buildpack) String() string {
+	return fmt.Sprintf("Buildpack{ Buildpack: %s, CacheRoot: %s, logger: %s }",
+		b.Buildpack, b.CacheRoot, b.logger)
 }

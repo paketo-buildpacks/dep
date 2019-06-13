@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -80,11 +80,6 @@ func (l Logger) PrettyIdentity(v Identifiable) string {
 	}
 
 	return sb.String()
-}
-
-// String makes Logger satisfy the Stringer interface.
-func (l Logger) String() string {
-	return fmt.Sprintf("Logger{ Logger: %s }", l.Logger)
 }
 
 // SubsequentLine prints log message with the subsequent line indent.

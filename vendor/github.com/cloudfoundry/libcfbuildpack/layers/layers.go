@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -79,12 +79,6 @@ func (l Layers) HelperLayer(id string, name string) HelperLayer {
 // Layer creates a Layer with a specified name.
 func (l Layers) Layer(name string) Layer {
 	return Layer{l.Layers.Layer(name), l.logger, l.TouchedLayers}
-}
-
-// String makes Layers satisfy the Stringer interface.
-func (l Layers) String() string {
-	return fmt.Sprintf("Layers{ Layers: %s, DependencyBuildPlans: %s, TouchedLayers: %s, buildpack: %s, buildpackCache: %s, logger: %s }",
-		l.Layers, l.DependencyBuildPlans, l.TouchedLayers, l.buildpack, l.buildpackCache, l.logger)
 }
 
 // WriteApplicationMetadata writes application metadata to the filesystem.

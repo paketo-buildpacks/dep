@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,6 @@
 package build
 
 import (
-	"fmt"
-
 	"github.com/buildpack/libbuildpack/build"
 	"github.com/buildpack/libbuildpack/buildplan"
 	bp "github.com/buildpack/libbuildpack/layers"
@@ -47,12 +45,6 @@ type Build struct {
 
 	// Services represents the services bound to the application.
 	Services services.Services
-}
-
-// String makes Build satisfy the Stringer interface.
-func (b Build) String() string {
-	return fmt.Sprintf("Build{ Build: %s, Buildpack: %s, Layers: %s, Logger: %s, Services: %s }",
-		b.Build, b.Buildpack, b.Layers, b.Logger, b.Services)
 }
 
 // Success signals a successful build by exiting with a zero status code.  Combines specied build plan with build
