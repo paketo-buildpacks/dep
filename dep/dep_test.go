@@ -44,6 +44,7 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 			factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
 				Metadata: buildplan.Metadata{
 					dep.ImportPath: packageName,
+					dep.Targets: []interface{}{},
 				}})
 
 			_, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
@@ -56,6 +57,21 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(willContribute).To(BeFalse())
+		})
+
+		it("reads targets from the buildplan", func() {
+
+			factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
+				Metadata: buildplan.Metadata{
+					dep.ImportPath: packageName,
+					dep.Targets:    []string{"first", "second"},
+				},
+			})
+
+			contributor, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(willContribute).To(BeTrue())
+			Expect(contributor.Targets).To(Equal([]string{"first", "second"}))
 		})
 	})
 
@@ -120,6 +136,29 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(willContribute).To(BeTrue())
 			Expect(contributor.ContributeBinary()).To(Succeed())
+		})
+
+		when("targets are defined", func () {
+			it("runs go install with the targets", func() {
+				factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
+					Metadata: buildplan.Metadata{
+						dep.ImportPath: packageName,
+						dep.Targets:[]string{"first", "second"},
+					}})
+				appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
+				appBinaryLayer.Touch()
+				packagesLayer := factory.Build.Layers.Layer(dep.Packages)
+				installDir := filepath.Join(packagesLayer.Root, "src", packageName)
+
+				mockRunner.EXPECT().CustomRun(installDir, []string{
+					fmt.Sprintf("GOPATH=%s", packagesLayer.Root),
+					fmt.Sprintf("GOBIN=%s", appBinaryLayer.Root),
+				}, os.Stdout, os.Stderr, "go", "install", "-buildmode", "pie", "-tags", "cloudfoundry", "first", "second")
+				contributor, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(willContribute).To(BeTrue())
+				Expect(contributor.ContributeBinary()).To(Succeed())
+			})
 		})
 	})
 

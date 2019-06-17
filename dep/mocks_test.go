@@ -5,10 +5,9 @@
 package dep_test
 
 import (
+	gomock "github.com/golang/mock/gomock"
 	io "io"
 	reflect "reflect"
-
-	gomock "github.com/golang/mock/gomock"
 )
 
 // MockRunner is a mock of Runner interface
