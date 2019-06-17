@@ -33,7 +33,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 		it("should fail", func() {
 			code, err := runDetect(factory.Detect)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal(ErrorMsg))
+			Expect(err.Error()).To(Equal(MissingGopkgErrorMsg))
 			Expect(code).To(Equal(detect.FailStatusCode))
 		})
 	})
@@ -44,7 +44,8 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
 
 			code, err := runDetect(factory.Detect)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal(MissingBuildpackYmlErrorMsg))
 			Expect(code).To(Equal(detect.FailStatusCode))
 		})
 	})
@@ -131,7 +132,8 @@ go:
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
 
 			code, err := runDetect(factory.Detect)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal(MissingImportPathErrorMsg))
 			Expect(code).To(Equal(detect.FailStatusCode))
 		})
 	})
