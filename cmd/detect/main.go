@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/dep-cnb/dep"
@@ -16,6 +17,7 @@ import (
 )
 
 const ErrorMsg = "no Gopkg.toml found at root level"
+const EmptyTargetEnvVariableMsg = "BP_GO_TARGETS set but with empty value"
 
 func main() {
 	context, err := detect.DefaultDetect()
@@ -45,18 +47,31 @@ func runDetect(context detect.Detect) (int, error) {
 	if exists, err := helper.FileExists(bpYmlFile); err != nil {
 		return detect.FailStatusCode, errors.Wrap(err, fmt.Sprintf("error checking filepath: %s", bpYmlFile))
 	} else if exists {
-		importPath, err := parseImportPath(bpYmlFile)
+		config, err := parseBuildpackYml(bpYmlFile)
 		if err != nil {
 			return detect.FailStatusCode, errors.Wrap(err, "error reading buildpack.yml")
 		}
-		if importPath == "" {
+		if config.ImportPath == "" {
 			return context.Fail(), nil
 		}
+
+		if environmentTargets, ok := os.LookupEnv("BP_GO_TARGETS"); ok {
+			if environmentTargets == "" {
+				return detect.FailStatusCode, errors.New(EmptyTargetEnvVariableMsg)
+			}
+			var targets []string
+			for _, target := range strings.Split(environmentTargets, ":") {
+				targets = append(targets, target)
+			}
+			config.Go.Targets = targets
+		}
+
 		return context.Pass(buildplan.BuildPlan{
 			dep.Dependency: buildplan.Dependency{
 				Metadata: buildplan.Metadata{
 					"build":       true,
-					"import-path": importPath,
+					"import-path": config.ImportPath,
+					"targets": config.Go.Targets,
 				},
 			},
 		})
@@ -64,16 +79,23 @@ func runDetect(context detect.Detect) (int, error) {
 	return context.Fail(), nil
 }
 
-func parseImportPath(bpYmlFilePath string) (string, error) {
+type BpYML struct {
+	ImportPath string `yaml:"import-path"`
+	Go         struct {
+		Targets []string `yaml:"targets"`
+	} `yaml:"go"`
+}
+
+func parseBuildpackYml(bpYmlFilePath string) (BpYML, error) {
+
+	bpYML := BpYML{}
 	contents, err := ioutil.ReadFile(bpYmlFilePath)
 	if err != nil {
-		return "", err
+		return bpYML, err
 	}
-	bpYML := struct {
-		ImportPath string `yaml:"import-path"`
-	}{}
+
 	if err := yaml.Unmarshal(contents, &bpYML); err != nil {
-		return "", err
+		return bpYML, err
 	}
-	return bpYML.ImportPath, nil
+	return bpYML, nil
 }
