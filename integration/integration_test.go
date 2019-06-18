@@ -54,6 +54,21 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		Expect(app.BuildLogs()).To(MatchRegexp("Dep.*: Contributing to layer"))
 	})
 
+	it("should successfully build a simple app with target", func() {
+		appRoot := filepath.Join("testdata", "simple_app_with_target")
+
+		app, err := dagger.PackBuild(appRoot, goURI, depURI)
+		Expect(err).NotTo(HaveOccurred())
+		defer app.Destroy()
+
+		Expect(app.Start()).To(Succeed())
+		body, _, err := app.HTTPGet("/")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(body).To(ContainSubstring("Hello, World!"))
+
+		Expect(app.BuildLogs()).To(MatchRegexp("Dep.*: Contributing to layer"))
+	})
+
 	it("uses Gopkg.lock as a lockfile for re-builds", func() {
 		appDir := filepath.Join("testdata", "with_lockfile")
 		app, err := dagger.PackBuild(appDir, goURI, depURI)

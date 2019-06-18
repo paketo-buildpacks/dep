@@ -179,7 +179,6 @@ func (c *Contributor) ContributeBinary() error {
 			args = append(args, c.Targets...)
 		}
 
-		layer.Logger.SubsequentLine("%q", args)
 		return c.runner.CustomRun(c.installDir, []string{
 			fmt.Sprintf("GOPATH=%s", c.packagesLayer.Root),
 			fmt.Sprintf("GOBIN=%s", layer.Root),
