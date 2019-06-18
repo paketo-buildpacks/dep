@@ -82,8 +82,11 @@ func NewContributor(context build.Build, runner Runner) (Contributor, bool, erro
 
 	targets, exists := dependency.Metadata[Targets]
 	if exists {
-		if targets, ok := targets.([]string); ok {
-			contributor.Targets = targets
+		if targets, ok := targets.([]interface{}); ok {
+			contributor.Targets = make([]string, len(targets))
+			for i, v := range targets {
+				contributor.Targets[i] = fmt.Sprint(v)
+			}
 		}
 	}
 
@@ -175,6 +178,8 @@ func (c *Contributor) ContributeBinary() error {
 		if len(c.Targets) > 0 {
 			args = append(args, c.Targets...)
 		}
+
+		layer.Logger.SubsequentLine("%q", args)
 		return c.runner.CustomRun(c.installDir, []string{
 			fmt.Sprintf("GOPATH=%s", c.packagesLayer.Root),
 			fmt.Sprintf("GOBIN=%s", layer.Root),
@@ -184,7 +189,11 @@ func (c *Contributor) ContributeBinary() error {
 }
 
 func (c *Contributor) ContributeStartCommand() error {
-	appBinaryPath := filepath.Join(c.appBinaryLayer.Root, filepath.Base(c.appDirName))
+	appName := filepath.Base(c.appDirName)
+	if len(c.Targets) > 0 {
+		appName = filepath.Base(c.Targets[0])
+	}
+	appBinaryPath := filepath.Join(c.appBinaryLayer.Root, appName)
 	return c.context.Layers.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", appBinaryPath}}})
 }
 
