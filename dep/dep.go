@@ -23,6 +23,7 @@ const (
 	lockFile   = "Gopkg.lock"
 	AppBinary  = "app-binary"
 	ImportPath = "import-path"
+	Targets    = "targets"
 )
 
 type Contributor struct {
@@ -36,6 +37,7 @@ type Contributor struct {
 	appDirName     string
 	installDir     string
 	vendored       bool
+	Targets        []string
 }
 
 type Identifiable struct {
@@ -76,6 +78,16 @@ func NewContributor(context build.Build, runner Runner) (Contributor, bool, erro
 		appBinaryLayer: context.Layers.Layer(AppBinary),
 		vendored:       vendored,
 		logger:         context.Logger,
+	}
+
+	targets, exists := dependency.Metadata[Targets]
+	if exists {
+		if targets, ok := targets.([]interface{}); ok {
+			contributor.Targets = make([]string, len(targets))
+			for i, v := range targets {
+				contributor.Targets[i] = fmt.Sprint(v)
+			}
+		}
 	}
 
 	appDirName, ok := importPath.(string)
@@ -163,6 +175,10 @@ func (c *Contributor) ContributeBinary() error {
 		layer.Logger.SubsequentLine("Running `go install`")
 		args := []string{"install", "-buildmode", "pie", "-tags", "cloudfoundry"}
 
+		if len(c.Targets) > 0 {
+			args = append(args, c.Targets...)
+		}
+
 		return c.runner.CustomRun(c.installDir, []string{
 			fmt.Sprintf("GOPATH=%s", c.packagesLayer.Root),
 			fmt.Sprintf("GOBIN=%s", layer.Root),
@@ -172,7 +188,11 @@ func (c *Contributor) ContributeBinary() error {
 }
 
 func (c *Contributor) ContributeStartCommand() error {
-	appBinaryPath := filepath.Join(c.appBinaryLayer.Root, filepath.Base(c.appDirName))
+	appName := filepath.Base(c.appDirName)
+	if len(c.Targets) > 0 {
+		appName = filepath.Base(c.Targets[0])
+	}
+	appBinaryPath := filepath.Join(c.appBinaryLayer.Root, appName)
 	return c.context.Layers.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", appBinaryPath}}})
 }
 

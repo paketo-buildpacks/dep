@@ -1,0 +1,3 @@
+import-path: hubgit.net/user/app
+go:
+  targets: ["./cmd/site"]
