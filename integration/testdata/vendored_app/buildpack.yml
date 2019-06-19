@@ -1,1 +1,2 @@
-import-path: hubgit.net/user/app
+go:
+  import-path: hubgit.net/user/app

@@ -55,8 +55,9 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 		it.Before(func() {
 			bpYmlString = `---
-import-path: some/app
+
 go:
+  import-path: some/app
   targets: ["./path/to/first", "./path/to/second"]`
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), bpYmlString)
 			goPkgString := fmt.Sprintf("This is a go pkg toml")

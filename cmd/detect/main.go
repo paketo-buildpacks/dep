@@ -51,7 +51,7 @@ func runDetect(context detect.Detect) (int, error) {
 		if err != nil {
 			return detect.FailStatusCode, errors.Wrap(err, "error reading buildpack.yml")
 		}
-		if config.ImportPath == "" {
+		if config.Go.ImportPath == "" {
 			return context.Fail(), nil
 		}
 
@@ -70,7 +70,7 @@ func runDetect(context detect.Detect) (int, error) {
 			dep.Dependency: buildplan.Dependency{
 				Metadata: buildplan.Metadata{
 					"build":       true,
-					"import-path": config.ImportPath,
+					"import-path": config.Go.ImportPath,
 					"targets": config.Go.Targets,
 				},
 			},
@@ -80,8 +80,8 @@ func runDetect(context detect.Detect) (int, error) {
 }
 
 type BpYML struct {
-	ImportPath string `yaml:"import-path"`
 	Go         struct {
+		ImportPath string `yaml:"import-path"`
 		Targets []string `yaml:"targets"`
 	} `yaml:"go"`
 }
