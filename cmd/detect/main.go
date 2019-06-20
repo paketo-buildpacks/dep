@@ -2,22 +2,29 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/dep-cnb/dep"
-	"github.com/cloudfoundry/libcfbuildpack/helper"
-	"gopkg.in/yaml.v2"
-
 	"github.com/cloudfoundry/libcfbuildpack/detect"
+	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"github.com/pkg/errors"
 )
 
 const ErrorMsg = "no Gopkg.toml found at root level"
 const EmptyTargetEnvVariableMsg = "BP_GO_TARGETS set but with empty value"
+
+
+type BuildpackYAML struct {
+	Config Config `yaml:"go"`
+}
+
+type Config struct {
+	ImportPath string `yaml:"import-path"`
+	Targets []string `yaml:"targets"`
+}
 
 func main() {
 	context, err := detect.DefaultDetect()
@@ -43,15 +50,16 @@ func runDetect(context detect.Detect) (int, error) {
 		return detect.FailStatusCode, fmt.Errorf(ErrorMsg)
 	}
 
-	bpYmlFile := filepath.Join(context.Application.Root, "buildpack.yml")
-	if exists, err := helper.FileExists(bpYmlFile); err != nil {
-		return detect.FailStatusCode, errors.Wrap(err, fmt.Sprintf("error checking filepath: %s", bpYmlFile))
+	bpYmlFilePath := filepath.Join(context.Application.Root, "buildpack.yml")
+	if exists, err := helper.FileExists(bpYmlFilePath); err != nil {
+		return detect.FailStatusCode, errors.Wrap(err, fmt.Sprintf("error checking filepath: %s", bpYmlFilePath))
 	} else if exists {
-		config, err := parseBuildpackYml(bpYmlFile)
-		if err != nil {
+		buildpackYaml := BuildpackYAML{}
+		if err := helper.ReadBuildpackYaml(bpYmlFilePath, &buildpackYaml); err != nil {
 			return detect.FailStatusCode, errors.Wrap(err, "error reading buildpack.yml")
 		}
-		if config.Go.ImportPath == "" {
+
+		if buildpackYaml.Config.ImportPath == "" {
 			return context.Fail(), nil
 		}
 
@@ -63,39 +71,18 @@ func runDetect(context detect.Detect) (int, error) {
 			for _, target := range strings.Split(environmentTargets, ":") {
 				targets = append(targets, target)
 			}
-			config.Go.Targets = targets
+			buildpackYaml.Config.Targets = targets
 		}
 
 		return context.Pass(buildplan.BuildPlan{
 			dep.Dependency: buildplan.Dependency{
 				Metadata: buildplan.Metadata{
 					"build":       true,
-					"import-path": config.Go.ImportPath,
-					"targets": config.Go.Targets,
+					"import-path": buildpackYaml.Config.ImportPath,
+					"targets": buildpackYaml.Config.Targets,
 				},
 			},
 		})
 	}
 	return context.Fail(), nil
-}
-
-type BpYML struct {
-	Go         struct {
-		ImportPath string `yaml:"import-path"`
-		Targets []string `yaml:"targets"`
-	} `yaml:"go"`
-}
-
-func parseBuildpackYml(bpYmlFilePath string) (BpYML, error) {
-
-	bpYML := BpYML{}
-	contents, err := ioutil.ReadFile(bpYmlFilePath)
-	if err != nil {
-		return bpYML, err
-	}
-
-	if err := yaml.Unmarshal(contents, &bpYML); err != nil {
-		return bpYML, err
-	}
-	return bpYML, nil
 }
