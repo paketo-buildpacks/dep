@@ -39,14 +39,16 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("Gopkg.toml exists and buildpack.yml does not exist", func() {
-		it("should fail detection", func() {
+		it("should pass and not write import-path in the buildplan", func() {
 			goPkgString := fmt.Sprintf("This is a go pkg toml")
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
 
 			code, err := runDetect(factory.Detect)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal(MissingBuildpackYmlErrorMsg))
-			Expect(code).To(Equal(detect.FailStatusCode))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(code).To(Equal(detect.PassStatusCode))
+			Expect(factory.Output[dep.Dependency].Metadata).NotTo(HaveKey(dep.ImportPath))
+			Expect(factory.Output[dep.Dependency].Metadata).NotTo(HaveKey(dep.Targets))
+			Expect(factory.Output[dep.Dependency].Metadata).To(HaveKey("build"))
 		})
 	})
 
@@ -63,6 +65,10 @@ go:
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), bpYmlString)
 			goPkgString := fmt.Sprintf("This is a go pkg toml")
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
+		})
+
+		it.After(func() {
+			Expect(os.Unsetenv("BP_GO_TARGETS")).To(Succeed())
 		})
 
 		it("adds the `import-path` and targets to the build plan", func() {
@@ -86,7 +92,6 @@ go:
 
 		when("BP_GO_TARGETS environment variable is set", func() {
 			it("should use the BP_GO_TARGETS value in the build plan", func() {
-
 				err := os.Setenv("BP_GO_TARGETS", "./path/to/third:./path/to/fourth")
 				Expect(err).NotTo(HaveOccurred())
 
@@ -102,14 +107,13 @@ go:
 						},
 					},
 				}
-				Expect(factory.Output).To(Equal(plan))
 
+				Expect(factory.Output).To(Equal(plan))
 			})
 		})
 
 		when("BP_GO_TARGETS environment variable is set but empty", func() {
 			it("should use fail the detect phase", func() {
-
 				err := os.Setenv("BP_GO_TARGETS", "")
 				Expect(err).NotTo(HaveOccurred())
 
@@ -124,7 +128,7 @@ go:
 	})
 
 	when("Gopkg.toml exists and buildpack.yml empty", func() {
-		it("fails to detect", func() {
+		it("passes detect and does not add import-path to the buildplan", func() {
 			bpYmlString := ""
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), bpYmlString)
 
@@ -132,9 +136,11 @@ go:
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
 
 			code, err := runDetect(factory.Detect)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal(MissingImportPathErrorMsg))
-			Expect(code).To(Equal(detect.FailStatusCode))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(code).To(Equal(detect.PassStatusCode))
+			Expect(factory.Output[dep.Dependency].Metadata).NotTo(HaveKey(dep.ImportPath))
+			Expect(factory.Output[dep.Dependency].Metadata).NotTo(HaveKey(dep.Targets))
+			Expect(factory.Output[dep.Dependency].Metadata).To(HaveKey("build"))
 		})
 	})
 }

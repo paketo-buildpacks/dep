@@ -21,7 +21,7 @@ func main() {
 
 	code, err := runBuild(context)
 	if err != nil {
-		context.Logger.Info(err.Error())
+		context.Logger.Error("failure running build: %s", err.Error())
 	}
 
 	os.Exit(code)

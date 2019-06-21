@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"github.com/cloudfoundry/dep-cnb/dep"
 	"os"
 	"path/filepath"
 	"testing"
@@ -52,6 +53,13 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		Expect(body).To(ContainSubstring("Hello, World!"))
 
 		Expect(app.BuildLogs()).To(MatchRegexp("Dep.*: Contributing to layer"))
+	})
+
+	it("should fail to build if the app does not specify import-path", func() {
+		appRoot := filepath.Join("testdata", "simple_app_without_import_path")
+		_, err := dagger.PackBuild(appRoot, goURI, depURI)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring(dep.MissingImportPathErrorMsg))
 	})
 
 	it("should successfully build a simple app with target", func() {

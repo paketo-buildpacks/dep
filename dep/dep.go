@@ -18,12 +18,13 @@ import (
 )
 
 const (
-	Dependency = "dep"
-	Packages   = "packages"
-	lockFile   = "Gopkg.lock"
-	AppBinary  = "app-binary"
-	ImportPath = "import-path"
-	Targets    = "targets"
+	Dependency                = "dep"
+	Packages                  = "packages"
+	lockFile                  = "Gopkg.lock"
+	AppBinary                 = "app-binary"
+	ImportPath                = "import-path"
+	Targets                   = "targets"
+	MissingImportPathErrorMsg = "no import-path found in buildpack.yml"
 )
 
 type Contributor struct {
@@ -63,7 +64,7 @@ func NewContributor(context build.Build, runner Runner) (Contributor, bool, erro
 
 	importPath, exists := dependency.Metadata[ImportPath]
 	if !exists {
-		return Contributor{}, false, nil
+		return Contributor{}, false, fmt.Errorf(MissingImportPathErrorMsg)
 	}
 
 	vendored, err := isVendored(context)

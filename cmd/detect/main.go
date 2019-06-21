@@ -14,18 +14,15 @@ import (
 )
 
 const MissingGopkgErrorMsg = "no Gopkg.toml found at root level"
-const MissingBuildpackYmlErrorMsg = "no buildpack.yml found at root level"
-const MissingImportPathErrorMsg = "no import-path found in buildpack.yml"
 const EmptyTargetEnvVariableMsg = "BP_GO_TARGETS set but with empty value"
-
 
 type BuildpackYAML struct {
 	Config Config `yaml:"go"`
 }
 
 type Config struct {
-	ImportPath string `yaml:"import-path"`
-	Targets []string `yaml:"targets"`
+	ImportPath string   `yaml:"import-path"`
+	Targets    []string `yaml:"targets"`
 }
 
 func main() {
@@ -61,10 +58,6 @@ func runDetect(context detect.Detect) (int, error) {
 			return detect.FailStatusCode, errors.Wrap(err, "error reading buildpack.yml")
 		}
 
-		if buildpackYaml.Config.ImportPath == "" {
-			return context.Fail(), errors.New(MissingImportPathErrorMsg)
-		}
-
 		if environmentTargets, ok := os.LookupEnv("BP_GO_TARGETS"); ok {
 			if environmentTargets == "" {
 				return detect.FailStatusCode, errors.New(EmptyTargetEnvVariableMsg)
@@ -75,16 +68,28 @@ func runDetect(context detect.Detect) (int, error) {
 			}
 			buildpackYaml.Config.Targets = targets
 		}
+		metadata := buildplan.Metadata{
+			"build": true,
+		}
+
+		if buildpackYaml.Config.ImportPath != "" {
+			metadata[dep.ImportPath] = buildpackYaml.Config.ImportPath
+		}
+
+		if buildpackYaml.Config.Targets != nil {
+			metadata[dep.Targets] = buildpackYaml.Config.Targets
+		}
 
 		return context.Pass(buildplan.BuildPlan{
 			dep.Dependency: buildplan.Dependency{
-				Metadata: buildplan.Metadata{
-					"build":       true,
-					"import-path": buildpackYaml.Config.ImportPath,
-					"targets": buildpackYaml.Config.Targets,
-				},
+				Metadata: metadata,
 			},
 		})
 	}
-	return context.Fail(), errors.New(MissingBuildpackYmlErrorMsg)
+
+	return context.Pass(buildplan.BuildPlan{
+		dep.Dependency: buildplan.Dependency{
+			Metadata: buildplan.Metadata{"build": true},
+		},
+	})
 }

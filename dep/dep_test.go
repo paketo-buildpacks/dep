@@ -41,11 +41,11 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("NewContributor", func() {
-		it("returns true if it exists in the buildplan", func() {
+		it("returns true if dep exists in the buildplan", func() {
 			factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
 				Metadata: buildplan.Metadata{
 					dep.ImportPath: packageName,
-					dep.Targets: []interface{}{},
+					dep.Targets:    []interface{}{},
 				}})
 
 			_, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
@@ -61,7 +61,6 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("reads targets from the buildplan", func() {
-
 			factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
 				Metadata: buildplan.Metadata{
 					dep.ImportPath: packageName,
@@ -73,6 +72,19 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(willContribute).To(BeTrue())
 			Expect(contributor.Targets).To(Equal([]string{"first", "second"}))
+		})
+
+		it("returns an error if import-path not specified in buildplan", func() {
+			factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
+				Metadata: buildplan.Metadata{
+					dep.Targets: []interface{}{},
+				}})
+
+			_, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
+
+			Expect(willContribute).To(BeFalse())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(dep.MissingImportPathErrorMsg))
 		})
 	})
 
@@ -139,12 +151,12 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 			Expect(contributor.ContributeBinary()).To(Succeed())
 		})
 
-		when("targets are defined", func () {
+		when("targets are defined", func() {
 			it("runs go install with the targets", func() {
 				factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
 					Metadata: buildplan.Metadata{
 						dep.ImportPath: packageName,
-						dep.Targets:[]interface{}{"first", "second"},
+						dep.Targets:    []interface{}{"first", "second"},
 					}})
 				appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
 				appBinaryLayer.Touch()
@@ -163,9 +175,9 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
-	when("ContributeStartCommand", func () {
-		when("no targets are defined", func () {
-			it("will use import-path as the start command", func () {
+	when("ContributeStartCommand", func() {
+		when("no targets are defined", func() {
+			it("will use import-path as the start command", func() {
 
 				factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
 					Metadata: buildplan.Metadata{
@@ -175,7 +187,7 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 				appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
 				appBinaryLayer.Touch()
 
-				contributor,_,err := dep.NewContributor(factory.Build, mockRunner)
+				contributor, _, err := dep.NewContributor(factory.Build, mockRunner)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(contributor.ContributeStartCommand()).To(Succeed())
 
@@ -191,19 +203,18 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 
-		when("targets are defined", func () {
-			it("will use first target as the start command", func () {
+		when("targets are defined", func() {
+			it("will use first target as the start command", func() {
 				factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
 					Metadata: buildplan.Metadata{
 						dep.ImportPath: packageName,
-						dep.Targets:[]interface{}{"./cmd/first", "./cmd/second"},
-
+						dep.Targets:    []interface{}{"./cmd/first", "./cmd/second"},
 					}})
 
 				appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
 				appBinaryLayer.Touch()
 
-				contributor,_,err := dep.NewContributor(factory.Build, mockRunner)
+				contributor, _, err := dep.NewContributor(factory.Build, mockRunner)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(contributor.ContributeStartCommand()).To(Succeed())
 
