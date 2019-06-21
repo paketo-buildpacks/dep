@@ -13,7 +13,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-const ErrorMsg = "no Gopkg.toml found at root level"
+const MissingGopkgErrorMsg = "no Gopkg.toml found at root level"
+const MissingBuildpackYmlErrorMsg = "no buildpack.yml found at root level"
+const MissingImportPathErrorMsg = "no import-path found in buildpack.yml"
 const EmptyTargetEnvVariableMsg = "BP_GO_TARGETS set but with empty value"
 
 
@@ -47,7 +49,7 @@ func runDetect(context detect.Detect) (int, error) {
 	if exists, err := helper.FileExists(goPkgFile); err != nil {
 		return detect.FailStatusCode, errors.Wrap(err, fmt.Sprintf("error checking filepath: %s", goPkgFile))
 	} else if !exists {
-		return detect.FailStatusCode, fmt.Errorf(ErrorMsg)
+		return detect.FailStatusCode, fmt.Errorf(MissingGopkgErrorMsg)
 	}
 
 	bpYmlFilePath := filepath.Join(context.Application.Root, "buildpack.yml")
@@ -60,7 +62,7 @@ func runDetect(context detect.Detect) (int, error) {
 		}
 
 		if buildpackYaml.Config.ImportPath == "" {
-			return context.Fail(), nil
+			return context.Fail(), errors.New(MissingImportPathErrorMsg)
 		}
 
 		if environmentTargets, ok := os.LookupEnv("BP_GO_TARGETS"); ok {
@@ -84,5 +86,5 @@ func runDetect(context detect.Detect) (int, error) {
 			},
 		})
 	}
-	return context.Fail(), nil
+	return context.Fail(), errors.New(MissingBuildpackYmlErrorMsg)
 }
