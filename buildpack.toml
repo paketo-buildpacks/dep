@@ -10,6 +10,7 @@ pre_package = "./scripts/build.sh"
 
 [[metadata.dependencies]]
 id = "dep"
+name = "Dep"
 sha256 = "8ed5b7b3198ac916ec948057420ced10ac5c51e23e97a4cf736299a2b71c1d4a"
 source = "https://github.com/golang/dep/archive/v0.5.4.tar.gz"
 source_sha256 = "929c8f759838f98323211ba408a831ea80d93b75beda8584b6d950f393a3298a"
@@ -19,6 +20,7 @@ version = "0.5.4"
 
 [[metadata.dependencies]]
 id = "dep"
+name = "Dep"
 sha256 = "79b3ab9e67bf51bae787faaa5c78782752d0e39ea7b0d99e485a181b63a49559"
 source = "https://github.com/golang/dep/archive/v0.5.4.tar.gz"
 source_sha256 = "929c8f759838f98323211ba408a831ea80d93b75beda8584b6d950f393a3298a"
