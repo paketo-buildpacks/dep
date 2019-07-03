@@ -10,13 +10,21 @@ pre_package = "./scripts/build.sh"
 
 [[metadata.dependencies]]
 id = "dep"
-name = "Dep"
-sha256 = "b9679cb104da5f54a3378bdafb022b48df47142a296e4e2220a61212c61cf42a"
-source = "https://github.com/golang/dep/archive/v0.5.3.tar.gz"
-source_sha256 = "7522588ce2d988039b15c6a7584f854223606e6ffb37c180c11b5000906a846e"
+sha256 = "8ed5b7b3198ac916ec948057420ced10ac5c51e23e97a4cf736299a2b71c1d4a"
+source = "https://github.com/golang/dep/archive/v0.5.4.tar.gz"
+source_sha256 = "929c8f759838f98323211ba408a831ea80d93b75beda8584b6d950f393a3298a"
+stacks = ["org.cloudfoundry.stacks.cflinuxfs2"]
+uri = "https://buildpacks.cloudfoundry.org/dependencies/dep/dep-v0.5.4-linux-x64-cflinuxfs2-8ed5b7b3.tgz"
+version = "0.5.4"
+
+[[metadata.dependencies]]
+id = "dep"
+sha256 = "79b3ab9e67bf51bae787faaa5c78782752d0e39ea7b0d99e485a181b63a49559"
+source = "https://github.com/golang/dep/archive/v0.5.4.tar.gz"
+source_sha256 = "929c8f759838f98323211ba408a831ea80d93b75beda8584b6d950f393a3298a"
 stacks = ["org.cloudfoundry.stacks.cflinuxfs3"]
-uri = "https://buildpacks.cloudfoundry.org/dependencies/dep/dep-v0.5.3-linux-x64-cflinuxfs3-b9679cb1.tgz"
-version = "0.5.3"
+uri = "https://buildpacks.cloudfoundry.org/dependencies/dep/dep-v0.5.4-linux-x64-cflinuxfs3-79b3ab9e.tgz"
+version = "0.5.4"
 
 [[stacks]]
 id = "org.cloudfoundry.stacks.cflinuxfs3"
