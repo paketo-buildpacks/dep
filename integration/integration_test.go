@@ -1,10 +1,10 @@
 package integration_test
 
 import (
-	"github.com/cloudfoundry/dep-cnb/dep"
-	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/cloudfoundry/dep-cnb/dep"
 
 	"github.com/cloudfoundry/dagger"
 	. "github.com/onsi/gomega"
@@ -24,11 +24,11 @@ func TestIntegration(t *testing.T) {
 
 	depURI, err = dagger.PackageBuildpack(bpDir)
 	Expect(err).NotTo(HaveOccurred())
-	defer os.RemoveAll(depURI)
+	defer dagger.DeleteBuildpack(depURI)
 
 	goURI, err = dagger.GetLatestBuildpack("go-cnb")
 	Expect(err).NotTo(HaveOccurred())
-	defer os.RemoveAll(goURI)
+	defer dagger.DeleteBuildpack(goURI)
 
 	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
 }

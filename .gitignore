@@ -1,4 +1,5 @@
 .bin/
 *.tgz
-bin/
+/bin/
 dep-cnb_*
+/buildpack.toml
