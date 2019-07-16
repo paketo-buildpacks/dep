@@ -26,7 +26,7 @@ func TestIntegration(t *testing.T) {
 	Expect(err).NotTo(HaveOccurred())
 	defer dagger.DeleteBuildpack(depURI)
 
-	goURI, err = dagger.GetLatestBuildpack("go-cnb")
+	goURI, err = dagger.GetLatestBuildpack("go-compiler-cnb")
 	Expect(err).NotTo(HaveOccurred())
 	defer dagger.DeleteBuildpack(goURI)
 
