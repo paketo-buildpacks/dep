@@ -2,4 +2,3 @@
 *.tgz
 /bin/
 dep-cnb_*
-/buildpack.toml
