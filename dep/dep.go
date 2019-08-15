@@ -57,8 +57,13 @@ type Runner interface {
 }
 
 func NewContributor(context build.Build, runner Runner) (Contributor, bool, error) {
-	dependency, wantDependency := context.BuildPlan[Dependency]
-	if !wantDependency {
+
+
+
+	dependency, wantDependency, err := context.Plans.GetShallowMerged(Dependency)
+	if err != nil {
+		return Contributor{}, false, nil
+	} else if !wantDependency {
 		return Contributor{}, false, nil
 	}
 

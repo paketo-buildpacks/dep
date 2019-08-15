@@ -80,16 +80,24 @@ func runDetect(context detect.Detect) (int, error) {
 			metadata[dep.Targets] = buildpackYaml.Config.Targets
 		}
 
-		return context.Pass(buildplan.BuildPlan{
-			dep.Dependency: buildplan.Dependency{
+		return context.Pass(buildplan.Plan{
+			Provides: []buildplan.Provided{{
+				Name: dep.Dependency,
+			}},
+			Requires: []buildplan.Required{{
+				Name: dep.Dependency,
 				Metadata: metadata,
-			},
+			}},
 		})
 	}
 
-	return context.Pass(buildplan.BuildPlan{
-		dep.Dependency: buildplan.Dependency{
+	return context.Pass(buildplan.Plan{
+		Provides: []buildplan.Provided{{
+			Name: dep.Dependency,
+		}},
+		Requires: []buildplan.Required{{
+			Name: dep.Dependency,
 			Metadata: buildplan.Metadata{"build": true},
-		},
+		}},
 	})
 }

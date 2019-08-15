@@ -17,7 +17,7 @@ github.com/buildpack/libbuildpack/services
 github.com/buildpack/libbuildpack/stack
 # github.com/cloudfoundry/dagger v0.0.0-20190813205748-e53989179538
 github.com/cloudfoundry/dagger
-# github.com/cloudfoundry/libcfbuildpack v1.82.1-0.20190815154108-ebdea9feb73d
+# github.com/cloudfoundry/libcfbuildpack v1.83.0
 github.com/cloudfoundry/libcfbuildpack/build
 github.com/cloudfoundry/libcfbuildpack/detect
 github.com/cloudfoundry/libcfbuildpack/helper
@@ -35,7 +35,7 @@ github.com/fatih/color
 github.com/golang/mock/gomock
 # github.com/golang/protobuf v1.3.2
 github.com/golang/protobuf/proto
-# github.com/google/go-cmp v0.3.0
+# github.com/google/go-cmp v0.3.1
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
@@ -71,16 +71,16 @@ github.com/sclevine/spec
 github.com/sclevine/spec/report
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 github.com/xi2/xz
-# golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
+# golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7
 golang.org/x/net/html/charset
 golang.org/x/net/html
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/html/atom
 golang.org/x/net/context
-# golang.org/x/oauth2 v0.0.0-20190319182350-c85d3e98c914
+# golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
-# golang.org/x/sys v0.0.0-20190804053845-51ab0e2deafa
+# golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
 golang.org/x/sys/unix
 # golang.org/x/text v0.3.2
 golang.org/x/text/encoding
@@ -100,7 +100,7 @@ golang.org/x/text/runes
 golang.org/x/text/internal/language
 golang.org/x/text/internal/language/compact
 golang.org/x/text/internal/tag
-# google.golang.org/appengine v1.4.0
+# google.golang.org/appengine v1.6.1
 google.golang.org/appengine/urlfetch
 google.golang.org/appengine/internal
 google.golang.org/appengine/internal/urlfetch

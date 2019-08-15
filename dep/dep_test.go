@@ -2,13 +2,13 @@ package dep_test
 
 import (
 	"fmt"
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/dep-cnb/dep"
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	"github.com/golang/mock/gomock"
@@ -42,11 +42,13 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 
 	when("NewContributor", func() {
 		it("returns true if dep exists in the buildplan", func() {
-			factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
-				Metadata: buildplan.Metadata{
+
+			factory.AddPlan(generateMetadata(
+				buildpackplan.Metadata{
 					dep.ImportPath: packageName,
 					dep.Targets:    []interface{}{},
-				}})
+				}),
+			)
 
 			_, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
 			Expect(err).NotTo(HaveOccurred())
@@ -61,12 +63,14 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("reads targets from the buildplan", func() {
-			factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
-				Metadata: buildplan.Metadata{
+
+
+			factory.AddPlan(generateMetadata(
+				buildpackplan.Metadata{
 					dep.ImportPath: packageName,
-					dep.Targets:    []interface{}{"first", "second"},
-				},
-			})
+					dep.Targets:   []interface{}{"first", "second"},
+				}),
+			)
 
 			contributor, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
 			Expect(err).NotTo(HaveOccurred())
@@ -75,10 +79,12 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("returns an error if import-path not specified in buildplan", func() {
-			factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
-				Metadata: buildplan.Metadata{
-					dep.Targets: []interface{}{},
-				}})
+
+			factory.AddPlan(generateMetadata(
+				buildpackplan.Metadata{
+					dep.Targets:    []interface{}{},
+				}),
+			)
 
 			_, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
 
@@ -90,10 +96,12 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 
 	when("ContributeDep", func() {
 		it("installs dep when included in the build plan", func() {
-			factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
-				Metadata: buildplan.Metadata{
+
+			factory.AddPlan(generateMetadata(
+				buildpackplan.Metadata{
 					dep.ImportPath: packageName,
-				}})
+				}),
+			)
 
 			stubFixture := filepath.Join("testdata", "stub.tar.gz")
 			factory.AddDependency(dep.Dependency, stubFixture)
@@ -111,10 +119,13 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 
 	when("ContributePackages", func() {
 		it.Pend("runs dep ensure", func() {
-			factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
-				Metadata: buildplan.Metadata{
+
+			factory.AddPlan(generateMetadata(
+				buildpackplan.Metadata{
 					dep.ImportPath: packageName,
-				}})
+				}),
+			)
+
 			layer := factory.Build.Layers.Layer(dep.Packages)
 
 			installDir := filepath.Join(layer.Root, "src", packageName)
@@ -132,10 +143,13 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 
 	when("ContributeBinary", func() {
 		it("runs go install", func() {
-			factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
-				Metadata: buildplan.Metadata{
+
+			factory.AddPlan(generateMetadata(
+				buildpackplan.Metadata{
 					dep.ImportPath: packageName,
-				}})
+				}),
+			)
+
 			appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
 			appBinaryLayer.Touch()
 			packagesLayer := factory.Build.Layers.Layer(dep.Packages)
@@ -153,11 +167,14 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 
 		when("targets are defined", func() {
 			it("runs go install with the targets", func() {
-				factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
-					Metadata: buildplan.Metadata{
+
+				factory.AddPlan(generateMetadata(
+					buildpackplan.Metadata{
 						dep.ImportPath: packageName,
 						dep.Targets:    []interface{}{"first", "second"},
-					}})
+					}),
+				)
+
 				appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
 				appBinaryLayer.Touch()
 				packagesLayer := factory.Build.Layers.Layer(dep.Packages)
@@ -179,10 +196,11 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 		when("no targets are defined", func() {
 			it("will use import-path as the start command", func() {
 
-				factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
-					Metadata: buildplan.Metadata{
+				factory.AddPlan(generateMetadata(
+					buildpackplan.Metadata{
 						dep.ImportPath: packageName,
-					}})
+					}),
+				)
 
 				appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
 				appBinaryLayer.Touch()
@@ -205,11 +223,13 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 
 		when("targets are defined", func() {
 			it("will use first target as the start command", func() {
-				factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
-					Metadata: buildplan.Metadata{
+
+				factory.AddPlan(generateMetadata(
+					buildpackplan.Metadata{
 						dep.ImportPath: packageName,
 						dep.Targets:    []interface{}{"./cmd/first", "./cmd/second"},
-					}})
+					}),
+				)
 
 				appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
 				appBinaryLayer.Touch()
@@ -236,10 +256,13 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 		it("succesfully deletes all contents of appDir", func() {
 			dummyFile := filepath.Join(factory.Build.Application.Root, "dummy")
 			Expect(ioutil.WriteFile(dummyFile, []byte("baller"), 0777))
-			factory.AddBuildPlan(dep.Dependency, buildplan.Dependency{
-				Metadata: buildplan.Metadata{
+
+			factory.AddPlan(generateMetadata(
+				buildpackplan.Metadata{
 					dep.ImportPath: packageName,
-				}})
+				}),
+			)
+
 			contributor, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(willContribute).To(BeTrue())
@@ -251,4 +274,12 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 
 		})
 	})
+}
+
+
+func generateMetadata(metadata buildpackplan.Metadata) buildpackplan.Plan {
+	return buildpackplan.Plan{
+		Name: dep.Dependency,
+		Metadata: metadata,
+	}
 }
