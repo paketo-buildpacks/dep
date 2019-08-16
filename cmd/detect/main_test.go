@@ -51,6 +51,8 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 				Requires: []buildplan.Required{{
 					Name:     dep.Dependency,
 					Metadata: buildplan.Metadata{"build": true},
+				}, {
+					Name: GoDependency,
 				}},
 			}))
 		})
@@ -89,6 +91,8 @@ go:
 							"import-path": "some/app",
 							"targets":     []string{"./path/to/first", "./path/to/second"},
 						},
+					}, {
+						Name: GoDependency,
 					}},
 				}
 
@@ -112,6 +116,8 @@ go:
 								"build":       true,
 								"import-path": "some/app",
 								"targets":     []string{"./path/to/third", "./path/to/fourth"}},
+						},{
+							Name: GoDependency,
 						}},
 					}
 
@@ -151,6 +157,8 @@ go:
 					Requires: []buildplan.Required{{
 						Name:     dep.Dependency,
 						Metadata: buildplan.Metadata{"build": true},
+					}, {
+						Name: GoDependency,
 					}},
 				}))
 			})

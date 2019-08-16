@@ -15,6 +15,7 @@ import (
 
 const MissingGopkgErrorMsg = "no Gopkg.toml found at root level"
 const EmptyTargetEnvVariableMsg = "BP_GO_TARGETS set but with empty value"
+const GoDependency = "go"
 
 type BuildpackYAML struct {
 	Config Config `yaml:"go"`
@@ -87,6 +88,8 @@ func runDetect(context detect.Detect) (int, error) {
 			Requires: []buildplan.Required{{
 				Name: dep.Dependency,
 				Metadata: metadata,
+			}, {
+				Name: GoDependency,
 			}},
 		})
 	}
@@ -98,6 +101,8 @@ func runDetect(context detect.Detect) (int, error) {
 		Requires: []buildplan.Required{{
 			Name: dep.Dependency,
 			Metadata: buildplan.Metadata{"build": true},
+		}, {
+			Name: GoDependency,
 		}},
 	})
 }
