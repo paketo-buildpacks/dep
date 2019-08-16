@@ -20,7 +20,7 @@ import (
 
 //go:generate mockgen -source=dep.go -destination=mocks_test.go -package=dep_test
 
-func TestUnitGoMod(t *testing.T) {
+func TestUnitDep(t *testing.T) {
 	spec.Run(t, "Go Dep", testDep, spec.Report(report.Terminal{}))
 }
 
