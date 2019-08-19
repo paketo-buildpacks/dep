@@ -57,9 +57,6 @@ type Runner interface {
 }
 
 func NewContributor(context build.Build, runner Runner) (Contributor, bool, error) {
-
-
-
 	dependency, wantDependency, err := context.Plans.GetShallowMerged(Dependency)
 	if err != nil {
 		return Contributor{}, false, nil
@@ -173,9 +170,8 @@ func (c *Contributor) ContributePackages() error {
 			os.Stdout, os.Stderr,
 			depBin, "ensure")
 
-	}, layers.Cache)
+	})
 }
-
 func (c *Contributor) ContributeBinary() error {
 	return c.appBinaryLayer.Contribute(getAppBinaryMetadata(), func(layer layers.Layer) error {
 		layer.Logger.SubsequentLine("Running `go install`")

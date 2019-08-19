@@ -77,34 +77,6 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		Expect(app.BuildLogs()).To(MatchRegexp("Dep.*: Contributing to layer"))
 	})
 
-	it("uses Gopkg.lock as a lockfile for re-builds", func() {
-		appDir := filepath.Join("testdata", "with_lockfile")
-		app, err := dagger.PackBuild(appDir, goURI, depURI)
-		Expect(err).ToNot(HaveOccurred())
-		defer app.Destroy()
-
-		depPrefix := "Dep \\d*\\.\\d*\\.\\d*: "
-		depPackagesPrefix := "Dep Packages \\w*: "
-		contributeMsg := "Contributing to layer"
-		Expect(app.BuildLogs()).To(MatchRegexp(depPrefix + contributeMsg))
-		Expect(app.BuildLogs()).To(MatchRegexp(depPackagesPrefix + contributeMsg))
-
-		_, imageID, _, err := app.Info()
-		Expect(err).NotTo(HaveOccurred())
-
-		app, err = dagger.PackBuildNamedImage(imageID, appDir, goURI, depURI)
-		Expect(err).ToNot(HaveOccurred())
-
-		rebuildLogs := app.BuildLogs()
-		reuseMsg := "Reusing cached layer"
-		Expect(rebuildLogs).To(MatchRegexp(depPrefix + reuseMsg))
-		Expect(rebuildLogs).To(MatchRegexp(depPackagesPrefix + reuseMsg))
-		Expect(app.Start()).To(Succeed())
-
-		_, _, err = app.HTTPGet("/")
-		Expect(err).NotTo(HaveOccurred())
-	})
-
 	it("uses the vendored packages when the app is vendored", func() {
 		appDir := filepath.Join("testdata", "vendored_app")
 		app, err := dagger.PackBuild(appDir, goURI, depURI)
@@ -115,5 +87,24 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		Expect(app.Start()).To(Succeed())
 		_, _, err = app.HTTPGet("/")
 		Expect(err).ToNot(HaveOccurred())
+	})
+
+	it("uses updated source code on a rebuild", func() {
+		appRoot := filepath.Join("testdata", "with_lockfile")
+
+		app, err := dagger.PackBuild(appRoot, goURI, depURI)
+		Expect(err).NotTo(HaveOccurred())
+		defer app.Destroy()
+
+		Expect(err).ToNot(HaveOccurred())
+		Expect(app.BuildLogs()).To(MatchRegexp("Dep.*: Contributing to layer"))
+
+		_, imageID, _, err := app.Info()
+		appRoot = filepath.Join("testdata", "with_lockfile_modified")
+		app, err = dagger.PackBuildNamedImage(imageID, appRoot, goURI, depURI)
+		Expect(app.Start()).To(Succeed())
+		body, _, err := app.HTTPGet("/")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(body).To(ContainSubstring("The source changed!"))
 	})
 }
