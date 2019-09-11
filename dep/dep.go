@@ -143,7 +143,7 @@ func (c *Contributor) ContributeDep() error {
 	c.depLayer = c.context.Layers.DependencyLayer(dep)
 
 	return c.depLayer.Contribute(func(artifact string, layer layers.DependencyLayer) error {
-		layer.Logger.SubsequentLine("Expanding to %s", layer.Root)
+		layer.Logger.Body("Expanding to %s", layer.Root)
 		return helper.ExtractTarGz(artifact, layer.Root, 1)
 	}, layers.Build, layers.Cache)
 }
@@ -163,7 +163,7 @@ func (c *Contributor) ContributePackages() error {
 			return nil
 		}
 
-		layer.Logger.SubsequentLine("Fetching any unsaved dependencies (using `dep ensure`)")
+		layer.Logger.Body("Fetching any unsaved dependencies (using `dep ensure`)")
 		depBin := filepath.Join(c.depLayer.Root, "dep")
 		return c.runner.CustomRun(c.installDir,
 			[]string{fmt.Sprintf("GOPATH=%s", c.packagesLayer.Root)},
@@ -174,7 +174,7 @@ func (c *Contributor) ContributePackages() error {
 }
 func (c *Contributor) ContributeBinary() error {
 	return c.appBinaryLayer.Contribute(getAppBinaryMetadata(), func(layer layers.Layer) error {
-		layer.Logger.SubsequentLine("Running `go install`")
+		layer.Logger.Body("Running `go install`")
 		args := []string{"install", "-buildmode", "pie", "-tags", "cloudfoundry"}
 
 		if len(c.Targets) > 0 {
@@ -195,7 +195,7 @@ func (c *Contributor) ContributeStartCommand() error {
 		appName = filepath.Base(c.Targets[0])
 	}
 	appBinaryPath := filepath.Join(c.appBinaryLayer.Root, appName)
-	return c.context.Layers.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", appBinaryPath, false}}})
+	return c.context.Layers.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", appBinaryPath, c.context.Stack == "org.cloudfoundry.stacks.tiny"}}})
 }
 
 func (c *Contributor) setPackagesMetadata() error {

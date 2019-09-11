@@ -115,6 +115,7 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 			Expect(layer).To(test.HaveLayerMetadata(true, true, false))
 			Expect(filepath.Join(layer.Root, "stub.txt")).To(BeARegularFile())
 		})
+
 	})
 
 	when("ContributePackages", func() {
@@ -215,6 +216,34 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 					Processes: []layers.Process{
 						{
 							"web", appBinaryPath, false,
+						},
+					},
+				}))
+			})
+
+			it("will use import-path as the start command on tiny stack", func() {
+
+				factory.AddPlan(generateMetadata(
+					buildpackplan.Metadata{
+						dep.ImportPath: packageName,
+					}),
+				)
+
+				factory.Build.Stack = "org.cloudfoundry.stacks.tiny"
+
+				appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
+				appBinaryLayer.Touch()
+
+				contributor, _, err := dep.NewContributor(factory.Build, mockRunner)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(contributor.ContributeStartCommand()).To(Succeed())
+
+				appBinaryPath := filepath.Join(appBinaryLayer.Root, filepath.Base(packageName))
+
+				Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
+					Processes: []layers.Process{
+						{
+							"web", appBinaryPath, true,
 						},
 					},
 				}))
