@@ -195,7 +195,7 @@ func (c *Contributor) ContributeStartCommand() error {
 		appName = filepath.Base(c.Targets[0])
 	}
 	appBinaryPath := filepath.Join(c.appBinaryLayer.Root, appName)
-	return c.context.Layers.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", appBinaryPath}}})
+	return c.context.Layers.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", appBinaryPath, false}}})
 }
 
 func (c *Contributor) setPackagesMetadata() error {

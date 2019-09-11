@@ -2,12 +2,13 @@ package dep_test
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
-	"github.com/cloudfoundry/libcfbuildpack/layers"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
+	"github.com/cloudfoundry/libcfbuildpack/layers"
 
 	"github.com/cloudfoundry/dep-cnb/dep"
 	"github.com/cloudfoundry/libcfbuildpack/test"
@@ -64,11 +65,10 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 
 		it("reads targets from the buildplan", func() {
 
-
 			factory.AddPlan(generateMetadata(
 				buildpackplan.Metadata{
 					dep.ImportPath: packageName,
-					dep.Targets:   []interface{}{"first", "second"},
+					dep.Targets:    []interface{}{"first", "second"},
 				}),
 			)
 
@@ -82,7 +82,7 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 
 			factory.AddPlan(generateMetadata(
 				buildpackplan.Metadata{
-					dep.Targets:    []interface{}{},
+					dep.Targets: []interface{}{},
 				}),
 			)
 
@@ -214,7 +214,7 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 				Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 					Processes: []layers.Process{
 						{
-							"web", appBinaryPath,
+							"web", appBinaryPath, false,
 						},
 					},
 				}))
@@ -243,7 +243,7 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 				Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 					Processes: []layers.Process{
 						{
-							"web", appBinaryPath,
+							"web", appBinaryPath, false,
 						},
 					},
 				}))
@@ -276,10 +276,9 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 	})
 }
 
-
 func generateMetadata(metadata buildpackplan.Metadata) buildpackplan.Plan {
 	return buildpackplan.Plan{
-		Name: dep.Dependency,
+		Name:     dep.Dependency,
 		Metadata: metadata,
 	}
 }
