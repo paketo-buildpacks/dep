@@ -107,4 +107,19 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(body).To(ContainSubstring("The source changed!"))
 	})
+
+	when("the app specifies ldflags", func() {
+		it.Focus("should build the app with those build flags", func() {
+			app, err := dagger.PackBuild(filepath.Join("testdata", "simple_app_with_target_and_ldflags"), goURI, depURI)
+			Expect(err).ToNot(HaveOccurred())
+			defer app.Destroy()
+
+			Expect(app.Start()).To(Succeed())
+
+			body, _, err := app.HTTPGet("/")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(body).To(ContainSubstring("main.version: v1.2.3"))
+			Expect(body).To(ContainSubstring("main.sha: 7a82056"))
+		})
+	})
 }

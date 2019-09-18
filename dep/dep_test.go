@@ -166,7 +166,47 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 			Expect(contributor.ContributeBinary()).To(Succeed())
 		})
 
+		when("given ldflags", func() {
+			it.Before(func() {
+				Expect(ioutil.WriteFile(filepath.Join(factory.Build.Application.Root, "buildpack.yml"),
+					[]byte(`---
+go:
+  ldflags:
+    main.linker_flag: linked_flag
+    main.other_linker_flag: other_linked_flag`),
+					os.FileMode(0666))).To(Succeed())
+			})
+
+			it.Focus("runs `go install` with these ldflags", func() {
+
+				factory.AddPlan(generateMetadata(
+					buildpackplan.Metadata{
+						dep.ImportPath: packageName,
+					}),
+				)
+
+				appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
+				appBinaryLayer.Touch()
+				packagesLayer := factory.Build.Layers.Layer(dep.Packages)
+				installDir := filepath.Join(packagesLayer.Root, "src", packageName)
+
+				mockRunner.EXPECT().CustomRun(installDir, []string{
+					fmt.Sprintf("GOPATH=%s", packagesLayer.Root),
+					fmt.Sprintf("GOBIN=%s", appBinaryLayer.Root),
+				}, os.Stdout, os.Stderr, "go", "install", "-buildmode", "pie", "-tags", "cloudfoundry", "-ldflags", gomock.Any()).Do(func(args ...interface{}) {
+					Expect(args[11]).To(ContainSubstring("-X main.linker_flag=linked_flag"))
+					Expect(args[11]).To(ContainSubstring("-X main.other_linker_flag=other_linked_flag"))
+				})
+				contributor, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(willContribute).To(BeTrue())
+				Expect(contributor.ContributeBinary()).To(Succeed())
+
+			})
+		})
+
 		when("targets are defined", func() {
+
 			it("runs go install with the targets", func() {
 
 				factory.AddPlan(generateMetadata(
@@ -189,6 +229,46 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(willContribute).To(BeTrue())
 				Expect(contributor.ContributeBinary()).To(Succeed())
+			})
+
+			when("given ldflags", func() {
+				it.Before(func() {
+					Expect(ioutil.WriteFile(filepath.Join(factory.Build.Application.Root, "buildpack.yml"),
+						[]byte(`---
+go:
+  ldflags:
+    main.linker_flag: linked_flag
+    main.other_linker_flag: other_linked_flag`),
+						os.FileMode(0666))).To(Succeed())
+				})
+
+				it.Focus("runs `go install` with these ldflags", func() {
+
+					factory.AddPlan(generateMetadata(
+						buildpackplan.Metadata{
+							dep.ImportPath: packageName,
+							dep.Targets:    []interface{}{"first", "second"},
+						}),
+					)
+
+					appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
+					appBinaryLayer.Touch()
+					packagesLayer := factory.Build.Layers.Layer(dep.Packages)
+					installDir := filepath.Join(packagesLayer.Root, "src", packageName)
+
+					mockRunner.EXPECT().CustomRun(installDir, []string{
+						fmt.Sprintf("GOPATH=%s", packagesLayer.Root),
+						fmt.Sprintf("GOBIN=%s", appBinaryLayer.Root),
+					}, os.Stdout, os.Stderr, "go", "install", "-buildmode", "pie", "-tags", "cloudfoundry", "-ldflags", gomock.Any(), "first", "second").Do(func(args ...interface{}) {
+						Expect(args[11]).To(ContainSubstring("-X main.linker_flag=linked_flag"))
+						Expect(args[11]).To(ContainSubstring("-X main.other_linker_flag=other_linked_flag"))
+					})
+					contributor, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(willContribute).To(BeTrue())
+					Expect(contributor.ContributeBinary()).To(Succeed())
+
+				})
 			})
 		})
 	})

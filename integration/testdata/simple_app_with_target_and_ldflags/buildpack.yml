@@ -1,0 +1,7 @@
+go:
+  import-path: hubgit.net/user/app
+  targets: ["./cmd/site"]
+  ldflags:
+    main.version: v1.2.3
+    main.sha: 7a82056
+

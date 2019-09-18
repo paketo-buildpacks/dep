@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
@@ -39,6 +40,7 @@ type Contributor struct {
 	installDir     string
 	vendored       bool
 	Targets        []string
+	config         Config
 }
 
 type Identifiable struct {
@@ -105,6 +107,7 @@ func NewContributor(context build.Build, runner Runner) (Contributor, bool, erro
 }
 
 func (c *Contributor) Contribute() error {
+
 	if err := c.ContributeDep(); err != nil {
 		return err
 	}
@@ -173,9 +176,23 @@ func (c *Contributor) ContributePackages() error {
 	})
 }
 func (c *Contributor) ContributeBinary() error {
+	var err error
+	c.config, err = LoadConfig(c.context.Application.Root)
+	if err != nil {
+		return err
+	}
+
 	return c.appBinaryLayer.Contribute(getAppBinaryMetadata(), func(layer layers.Layer) error {
 		layer.Logger.Body("Running `go install`")
 		args := []string{"install", "-buildmode", "pie", "-tags", "cloudfoundry"}
+
+		if len(c.config.LDFlags) > 0 {
+			var ldflags []string
+			for ldflagKey, ldflagValue := range c.config.LDFlags {
+				ldflags = append(ldflags, fmt.Sprintf("-X %s=%s", ldflagKey, ldflagValue))
+			}
+			args = append(args, "-ldflags", strings.Join(ldflags, " "))
+		}
 
 		if len(c.Targets) > 0 {
 			args = append(args, c.Targets...)

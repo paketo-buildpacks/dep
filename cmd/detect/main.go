@@ -24,6 +24,7 @@ type BuildpackYAML struct {
 type Config struct {
 	ImportPath string   `yaml:"import-path"`
 	Targets    []string `yaml:"targets"`
+	LDFlags map[string]string `yaml:"ldflags"`
 }
 
 func main() {
@@ -64,7 +65,7 @@ func runDetect(context detect.Detect) (int, error) {
 				return detect.FailStatusCode, errors.New(EmptyTargetEnvVariableMsg)
 			}
 			var targets []string
-			for _, target := range strings.Split(environmentTargets, ":") {
+			for _, target := range strings.Split(environmentTargets, string(os.PathListSeparator)) {
 				targets = append(targets, target)
 			}
 			buildpackYaml.Config.Targets = targets

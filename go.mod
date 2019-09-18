@@ -13,4 +13,5 @@ require (
 	github.com/sclevine/spec v1.2.0
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
 	google.golang.org/appengine v1.6.2 // indirect
+	gopkg.in/yaml.v2 v2.2.2
 )
