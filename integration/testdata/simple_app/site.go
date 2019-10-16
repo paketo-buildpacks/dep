@@ -24,4 +24,5 @@ func main() {
 
 func hello(res http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(res, "Hello, World!")
+	fmt.Fprintf(res, "PATH=%s", os.Getenv("PATH"))
 }

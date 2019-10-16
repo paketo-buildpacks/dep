@@ -158,7 +158,7 @@ func testDep(t *testing.T, when spec.G, it spec.S) {
 
 			mockRunner.EXPECT().CustomRun(installDir, []string{
 				fmt.Sprintf("GOPATH=%s", packagesLayer.Root),
-				fmt.Sprintf("GOBIN=%s", appBinaryLayer.Root),
+				fmt.Sprintf("GOBIN=%s", filepath.Join(appBinaryLayer.Root, "bin")),
 			}, os.Stdout, os.Stderr, "go", "install", "-buildmode", "pie", "-tags", "cloudfoundry")
 			contributor, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
 			Expect(err).NotTo(HaveOccurred())
@@ -177,7 +177,7 @@ go:
 					os.FileMode(0666))).To(Succeed())
 			})
 
-			it.Focus("runs `go install` with these ldflags", func() {
+			it("runs `go install` with these ldflags", func() {
 
 				factory.AddPlan(generateMetadata(
 					buildpackplan.Metadata{
@@ -192,7 +192,7 @@ go:
 
 				mockRunner.EXPECT().CustomRun(installDir, []string{
 					fmt.Sprintf("GOPATH=%s", packagesLayer.Root),
-					fmt.Sprintf("GOBIN=%s", appBinaryLayer.Root),
+					fmt.Sprintf("GOBIN=%s", filepath.Join(appBinaryLayer.Root, "bin")),
 				}, os.Stdout, os.Stderr, "go", "install", "-buildmode", "pie", "-tags", "cloudfoundry", "-ldflags", gomock.Any()).Do(func(args ...interface{}) {
 					Expect(args[11]).To(ContainSubstring("-X main.linker_flag=linked_flag"))
 					Expect(args[11]).To(ContainSubstring("-X main.other_linker_flag=other_linked_flag"))
@@ -206,9 +206,7 @@ go:
 		})
 
 		when("targets are defined", func() {
-
 			it("runs go install with the targets", func() {
-
 				factory.AddPlan(generateMetadata(
 					buildpackplan.Metadata{
 						dep.ImportPath: packageName,
@@ -223,7 +221,7 @@ go:
 
 				mockRunner.EXPECT().CustomRun(installDir, []string{
 					fmt.Sprintf("GOPATH=%s", packagesLayer.Root),
-					fmt.Sprintf("GOBIN=%s", appBinaryLayer.Root),
+					fmt.Sprintf("GOBIN=%s", filepath.Join(appBinaryLayer.Root, "bin")),
 				}, os.Stdout, os.Stderr, "go", "install", "-buildmode", "pie", "-tags", "cloudfoundry", "first", "second")
 				contributor, willContribute, err := dep.NewContributor(factory.Build, mockRunner)
 				Expect(err).NotTo(HaveOccurred())
@@ -242,8 +240,7 @@ go:
 						os.FileMode(0666))).To(Succeed())
 				})
 
-				it.Focus("runs `go install` with these ldflags", func() {
-
+				it("runs `go install` with these ldflags", func() {
 					factory.AddPlan(generateMetadata(
 						buildpackplan.Metadata{
 							dep.ImportPath: packageName,
@@ -258,7 +255,7 @@ go:
 
 					mockRunner.EXPECT().CustomRun(installDir, []string{
 						fmt.Sprintf("GOPATH=%s", packagesLayer.Root),
-						fmt.Sprintf("GOBIN=%s", appBinaryLayer.Root),
+						fmt.Sprintf("GOBIN=%s", filepath.Join(appBinaryLayer.Root, "bin")),
 					}, os.Stdout, os.Stderr, "go", "install", "-buildmode", "pie", "-tags", "cloudfoundry", "-ldflags", gomock.Any(), "first", "second").Do(func(args ...interface{}) {
 						Expect(args[11]).To(ContainSubstring("-X main.linker_flag=linked_flag"))
 						Expect(args[11]).To(ContainSubstring("-X main.other_linker_flag=other_linked_flag"))
@@ -267,7 +264,6 @@ go:
 					Expect(err).NotTo(HaveOccurred())
 					Expect(willContribute).To(BeTrue())
 					Expect(contributor.ContributeBinary()).To(Succeed())
-
 				})
 			})
 		})
@@ -290,12 +286,14 @@ go:
 				Expect(err).NotTo(HaveOccurred())
 				Expect(contributor.ContributeStartCommand()).To(Succeed())
 
-				appBinaryPath := filepath.Join(appBinaryLayer.Root, filepath.Base(packageName))
+				appBinaryPath := filepath.Join(appBinaryLayer.Root, "bin", filepath.Base(packageName))
 
 				Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 					Processes: []layers.Process{
 						{
-							"web", appBinaryPath, false,
+							Type:    "web",
+							Command: appBinaryPath,
+							Direct:  false,
 						},
 					},
 				}))
@@ -318,12 +316,14 @@ go:
 				Expect(err).NotTo(HaveOccurred())
 				Expect(contributor.ContributeStartCommand()).To(Succeed())
 
-				appBinaryPath := filepath.Join(appBinaryLayer.Root, filepath.Base(packageName))
+				appBinaryPath := filepath.Join(appBinaryLayer.Root, "bin", filepath.Base(packageName))
 
 				Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 					Processes: []layers.Process{
 						{
-							"web", appBinaryPath, true,
+							Type:    "web",
+							Command: appBinaryPath,
+							Direct:  true,
 						},
 					},
 				}))
@@ -332,7 +332,6 @@ go:
 
 		when("targets are defined", func() {
 			it("will use first target as the start command", func() {
-
 				factory.AddPlan(generateMetadata(
 					buildpackplan.Metadata{
 						dep.ImportPath: packageName,
@@ -347,12 +346,14 @@ go:
 				Expect(err).NotTo(HaveOccurred())
 				Expect(contributor.ContributeStartCommand()).To(Succeed())
 
-				appBinaryPath := filepath.Join(appBinaryLayer.Root, "first")
+				appBinaryPath := filepath.Join(appBinaryLayer.Root, "bin", "first")
 
 				Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 					Processes: []layers.Process{
 						{
-							"web", appBinaryPath, false,
+							Type:    "web",
+							Command: appBinaryPath,
+							Direct:  false,
 						},
 					},
 				}))

@@ -51,6 +51,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		body, _, err := app.HTTPGet("/")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(body).To(ContainSubstring("Hello, World!"))
+		Expect(body).To(MatchRegexp(`PATH=.*/layers/org.cloudfoundry.dep/app-binary/bin`))
 
 		Expect(app.BuildLogs()).To(MatchRegexp("Dep.*: Contributing to layer"))
 	})
@@ -109,7 +110,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("the app specifies ldflags", func() {
-		it.Focus("should build the app with those build flags", func() {
+		it("should build the app with those build flags", func() {
 			app, err := dagger.PackBuild(filepath.Join("testdata", "simple_app_with_target_and_ldflags"), goURI, depURI)
 			Expect(err).ToNot(HaveOccurred())
 			defer app.Destroy()

@@ -200,7 +200,7 @@ func (c *Contributor) ContributeBinary() error {
 
 		return c.runner.CustomRun(c.installDir, []string{
 			fmt.Sprintf("GOPATH=%s", c.packagesLayer.Root),
-			fmt.Sprintf("GOBIN=%s", layer.Root),
+			fmt.Sprintf("GOBIN=%s", filepath.Join(layer.Root, "bin")),
 		}, os.Stdout, os.Stderr,
 			"go", args...)
 	}, layers.Launch)
@@ -211,8 +211,18 @@ func (c *Contributor) ContributeStartCommand() error {
 	if len(c.Targets) > 0 {
 		appName = filepath.Base(c.Targets[0])
 	}
-	appBinaryPath := filepath.Join(c.appBinaryLayer.Root, appName)
-	return c.context.Layers.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", appBinaryPath, c.context.Stack == "org.cloudfoundry.stacks.tiny"}}})
+
+	appBinaryPath := filepath.Join(c.appBinaryLayer.Root, "bin", appName)
+
+	return c.context.Layers.WriteApplicationMetadata(layers.Metadata{
+		Processes: []layers.Process{
+			{
+				Type:    "web",
+				Command: appBinaryPath,
+				Direct:  c.context.Stack == "org.cloudfoundry.stacks.tiny",
+			},
+		},
+	})
 }
 
 func (c *Contributor) setPackagesMetadata() error {
