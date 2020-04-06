@@ -1,7 +1,7 @@
 api = "0.2"
 
 [buildpack]
-id = "org.cloudfoundry.dep"
+id = "paketo-buildpacks/dep"
 name = "Dep Buildpack"
 version = "{{ .Version }}"
 

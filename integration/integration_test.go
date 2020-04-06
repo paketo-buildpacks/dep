@@ -51,7 +51,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		body, _, err := app.HTTPGet("/")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(body).To(ContainSubstring("Hello, World!"))
-		Expect(body).To(MatchRegexp(`PATH=.*/layers/org.cloudfoundry.dep/app-binary/bin`))
+		Expect(body).To(MatchRegexp(`PATH=.*/layers/paketo-buildpacks_dep/app-binary/bin`))
 
 		Expect(app.BuildLogs()).To(MatchRegexp("Dep.*: Contributing to layer"))
 	})
