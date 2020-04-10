@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 	"os"
 
-	"github.com/cloudfoundry/dep-cnb/dep"
-	"github.com/cloudfoundry/dep-cnb/utils"
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
+
+	"github.com/paketo-buildpacks/dep/dep"
+	"github.com/paketo-buildpacks/dep/utils"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
 )

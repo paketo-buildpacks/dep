@@ -1,4 +1,4 @@
-module github.com/cloudfoundry/dep-cnb
+module github.com/paketo-buildpacks/dep
 
 go 1.12
 

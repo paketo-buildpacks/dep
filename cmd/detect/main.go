@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/buildpack/libbuildpack/buildplan"
-	"github.com/cloudfoundry/dep-cnb/dep"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
+	"github.com/paketo-buildpacks/dep/dep"
 	"github.com/pkg/errors"
 )
 

@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cloudfoundry/dep-cnb/dep"
+	"github.com/paketo-buildpacks/dep/dep"
 
 	"github.com/cloudfoundry/dagger"
 	. "github.com/onsi/gomega"

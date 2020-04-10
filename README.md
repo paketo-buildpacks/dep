@@ -38,7 +38,7 @@ This builds the buildpack's Go source using GOOS=linux by default. You can suppl
 
 ## Required buildpack.yml
 
-The `dep-cnb` requires a `buildpack.yml` file in the root of the application directory, and must include `go.import-path` for the application:
+The `dep` requires a `buildpack.yml` file in the root of the application directory, and must include `go.import-path` for the application:
 
 ```yaml
 go:

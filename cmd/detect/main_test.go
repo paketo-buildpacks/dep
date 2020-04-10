@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/buildpack/libbuildpack/buildplan"
-	"github.com/cloudfoundry/dep-cnb/dep"
+	"github.com/paketo-buildpacks/dep/dep"
 
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/test"
@@ -116,7 +116,7 @@ go:
 								"build":       true,
 								"import-path": "some/app",
 								"targets":     []string{"./path/to/third", "./path/to/fourth"}},
-						},{
+						}, {
 							Name: GoDependency,
 						}},
 					}
