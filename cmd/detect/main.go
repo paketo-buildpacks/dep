@@ -22,9 +22,9 @@ type BuildpackYAML struct {
 }
 
 type Config struct {
-	ImportPath string   `yaml:"import-path"`
-	Targets    []string `yaml:"targets"`
-	LDFlags map[string]string `yaml:"ldflags"`
+	ImportPath string            `yaml:"import-path"`
+	Targets    []string          `yaml:"targets"`
+	LDFlags    map[string]string `yaml:"ldflags"`
 }
 
 func main() {
@@ -87,7 +87,7 @@ func runDetect(context detect.Detect) (int, error) {
 				Name: dep.Dependency,
 			}},
 			Requires: []buildplan.Required{{
-				Name: dep.Dependency,
+				Name:     dep.Dependency,
 				Metadata: metadata,
 			}, {
 				Name: GoDependency,
@@ -100,7 +100,7 @@ func runDetect(context detect.Detect) (int, error) {
 			Name: dep.Dependency,
 		}},
 		Requires: []buildplan.Required{{
-			Name: dep.Dependency,
+			Name:     dep.Dependency,
 			Metadata: buildplan.Metadata{"build": true},
 		}, {
 			Name: GoDependency,
