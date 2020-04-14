@@ -1,5 +1,9 @@
 # Dep Cloud Native Buildpack
 
+The Go Dep CNB builds a Go application binary, using the
+[`dep`](https://golang.github.io/dep/docs/introduction.html) tool to package
+dependencies.
+
 ## Integration
 
 The Dep CNB provides dep as a dependency. Downstream
