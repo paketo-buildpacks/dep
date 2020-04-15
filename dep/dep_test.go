@@ -10,9 +10,9 @@ import (
 	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 
-	"github.com/cloudfoundry/dep-cnb/dep"
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	"github.com/golang/mock/gomock"
+	"github.com/paketo-buildpacks/dep/dep"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 
