@@ -5,7 +5,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  unit:
     name: Unit Tests
     runs-on: ubuntu-latest
     steps:
@@ -21,3 +21,4 @@ jobs:
 
     - name: test
       run: ./scripts/unit.sh
+
