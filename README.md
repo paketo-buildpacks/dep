@@ -40,13 +40,22 @@ $ ./scripts/package.sh
 ```
 This builds the buildpack's Go source using GOOS=linux by default. You can supply another value as the first argument to package.sh.
 
-## Required buildpack.yml
+## `buildpack.yml` Configuration
 
-The `dep` requires a `buildpack.yml` file in the root of the application directory, and must include `go.import-path` for the application:
+The `dep` requires a `buildpack.yml` file in the root of the application directory, and must contain the `import-path` directive.
 
 ```yaml
 go:
+  # this sets the go import-path (required)
   import-path: hubgit.net/user/app
+
+  # this allows you to override the location of the main package of the app
+  targets: ["./cmd/web"]
+
+  # this allows you to set Go ldflags for compilation
+  ldflags:
+    main.version: v1.2.3
+    main.sha: 1234567
 ```
 
 See `integration/testdata/` subfolders for examples.
