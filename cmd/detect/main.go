@@ -91,6 +91,9 @@ func runDetect(context detect.Detect) (int, error) {
 				Metadata: metadata,
 			}, {
 				Name: GoDependency,
+				Metadata: buildplan.Metadata{
+					"build": true,
+				},
 			}},
 		})
 	}
@@ -104,6 +107,9 @@ func runDetect(context detect.Detect) (int, error) {
 			Metadata: buildplan.Metadata{"build": true},
 		}, {
 			Name: GoDependency,
+			Metadata: buildplan.Metadata{
+				"build": true,
+			},
 		}},
 	})
 }

@@ -52,7 +52,8 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 					Name:     dep.Dependency,
 					Metadata: buildplan.Metadata{"build": true},
 				}, {
-					Name: GoDependency,
+					Name:     GoDependency,
+					Metadata: buildplan.Metadata{"build": true},
 				}},
 			}))
 		})
@@ -92,7 +93,8 @@ go:
 							"targets":     []string{"./path/to/first", "./path/to/second"},
 						},
 					}, {
-						Name: GoDependency,
+						Name:     GoDependency,
+						Metadata: buildplan.Metadata{"build": true},
 					}},
 				}
 
@@ -117,7 +119,8 @@ go:
 								"import-path": "some/app",
 								"targets":     []string{"./path/to/third", "./path/to/fourth"}},
 						}, {
-							Name: GoDependency,
+							Name:     GoDependency,
+							Metadata: buildplan.Metadata{"build": true},
 						}},
 					}
 
@@ -158,7 +161,8 @@ go:
 						Name:     dep.Dependency,
 						Metadata: buildplan.Metadata{"build": true},
 					}, {
-						Name: GoDependency,
+						Name:     GoDependency,
+						Metadata: buildplan.Metadata{"build": true},
 					}},
 				}))
 			})
