@@ -4,6 +4,7 @@ api = "0.2"
 id = "paketo-buildpacks/dep"
 name = "Dep Buildpack"
 version = "{{ .Version }}"
+homepage = "https://github.com/paketo-buildpacks/dep"
 
 [metadata]
 include_files = ["bin/build","bin/detect","buildpack.toml","go.mod","go.sum"]
