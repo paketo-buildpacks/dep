@@ -299,34 +299,67 @@ go:
 				}))
 			})
 
-			it("will use import-path as the start command on tiny stack", func() {
+			//Remove this when the org.cloudfoundry.stacks.tiny tag is deprecated
+			when("the tiny stack id is org.cloudfoundry.stacks.tiny", func() {
+				it("will use import-path as the start command on tiny stack", func() {
+					factory.AddPlan(generateMetadata(
+						buildpackplan.Metadata{
+							dep.ImportPath: packageName,
+						}),
+					)
 
-				factory.AddPlan(generateMetadata(
-					buildpackplan.Metadata{
-						dep.ImportPath: packageName,
-					}),
-				)
+					factory.Build.Stack = "org.cloudfoundry.stacks.tiny"
 
-				factory.Build.Stack = "org.cloudfoundry.stacks.tiny"
+					appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
+					appBinaryLayer.Touch()
 
-				appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
-				appBinaryLayer.Touch()
+					contributor, _, err := dep.NewContributor(factory.Build, mockRunner)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contributor.ContributeStartCommand()).To(Succeed())
 
-				contributor, _, err := dep.NewContributor(factory.Build, mockRunner)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(contributor.ContributeStartCommand()).To(Succeed())
+					appBinaryPath := filepath.Join(appBinaryLayer.Root, "bin", filepath.Base(packageName))
 
-				appBinaryPath := filepath.Join(appBinaryLayer.Root, "bin", filepath.Base(packageName))
-
-				Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
-					Processes: []layers.Process{
-						{
-							Type:    "web",
-							Command: appBinaryPath,
-							Direct:  true,
+					Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
+						Processes: []layers.Process{
+							{
+								Type:    "web",
+								Command: appBinaryPath,
+								Direct:  true,
+							},
 						},
-					},
-				}))
+					}))
+				})
+			})
+
+			when("the tiny stack id is io.paketo.stacks.tiny", func() {
+				it("will use import-path as the start command on tiny stack", func() {
+					factory.AddPlan(generateMetadata(
+						buildpackplan.Metadata{
+							dep.ImportPath: packageName,
+						}),
+					)
+
+					factory.Build.Stack = "io.paketo.stacks.tiny"
+
+					appBinaryLayer := factory.Build.Layers.Layer(dep.AppBinary)
+					appBinaryLayer.Touch()
+
+					contributor, _, err := dep.NewContributor(factory.Build, mockRunner)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contributor.ContributeStartCommand()).To(Succeed())
+
+					appBinaryPath := filepath.Join(appBinaryLayer.Root, "bin", filepath.Base(packageName))
+
+					Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
+						Processes: []layers.Process{
+							{
+								Type:    "web",
+								Command: appBinaryPath,
+								Direct:  true,
+							},
+						},
+					}))
+				})
 			})
 		})
 
