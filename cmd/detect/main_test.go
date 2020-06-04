@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -24,6 +23,8 @@ func TestUnitDetect(t *testing.T) {
 func testDetect(t *testing.T, when spec.G, it spec.S) {
 	var factory *test.DetectFactory
 
+	const goPkgString = "This is a go pkg toml"
+
 	it.Before(func() {
 		RegisterTestingT(t)
 		factory = test.NewDetectFactory(t)
@@ -40,7 +41,6 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 	when("Gopkg.toml exists and buildpack.yml does not exist", func() {
 		it("should pass and not write import-path in the buildplan", func() {
-			goPkgString := fmt.Sprintf("This is a go pkg toml")
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
 
 			code, err := runDetect(factory.Detect)
@@ -69,7 +69,6 @@ go:
   import-path: some/app
   targets: ["./path/to/first", "./path/to/second"]`
 				test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), bpYmlString)
-				goPkgString := fmt.Sprintf("This is a go pkg toml")
 				test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
 			})
 
@@ -148,7 +147,6 @@ go:
 				bpYmlString := ""
 				test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), bpYmlString)
 
-				goPkgString := fmt.Sprintf("This is a go pkg toml")
 				test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "Gopkg.toml"), goPkgString)
 
 				code, err := runDetect(factory.Detect)

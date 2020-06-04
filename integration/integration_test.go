@@ -16,36 +16,51 @@ var (
 	depURI, goURI string
 )
 
-func TestIntegration(t *testing.T) {
-	Expect := NewWithT(t).Expect
-
+func BeforeSuite() {
+	var err error
 	bpDir, err := dagger.FindBPRoot()
 	Expect(err).NotTo(HaveOccurred())
-
 	depURI, err = dagger.PackageBuildpack(bpDir)
-	Expect(err).NotTo(HaveOccurred())
-	defer dagger.DeleteBuildpack(depURI)
+	Expect(err).ToNot(HaveOccurred())
 
-	goURI, err = dagger.GetLatestBuildpack("go-compiler-cnb")
-	Expect(err).NotTo(HaveOccurred())
-	defer dagger.DeleteBuildpack(goURI)
+	goURI, err = dagger.GetLatestCommunityBuildpack("paketo-buildpacks", "go-compiler")
+	Expect(err).ToNot(HaveOccurred())
+}
 
-	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
+func AfterSuite() {
+	Expect(dagger.DeleteBuildpack(depURI)).To(Succeed())
+	Expect(dagger.DeleteBuildpack(goURI)).To(Succeed())
+}
+
+func TestIntegration(t *testing.T) {
+	RegisterTestingT(t)
+	BeforeSuite()
+	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}), spec.Parallel())
+	AfterSuite()
 }
 
 func testIntegration(t *testing.T, when spec.G, it spec.S) {
-	var Expect func(interface{}, ...interface{}) GomegaAssertion
+	var (
+		Expect func(interface{}, ...interface{}) GomegaAssertion
+		app    *dagger.App
+		err    error
+	)
 
 	it.Before(func() {
 		Expect = NewWithT(t).Expect
 	})
 
+	it.After(func() {
+		if app != nil {
+			Expect(app.Destroy()).To(Succeed())
+		}
+	})
+
 	it("should successfully build a simple app", func() {
 		appRoot := filepath.Join("testdata", "simple_app")
 
-		app, err := dagger.PackBuild(appRoot, goURI, depURI)
+		app, err = dagger.PackBuild(appRoot, goURI, depURI)
 		Expect(err).NotTo(HaveOccurred())
-		defer app.Destroy()
 
 		Expect(app.Start()).To(Succeed())
 		body, _, err := app.HTTPGet("/")
@@ -66,9 +81,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	it("should successfully build a simple app with target", func() {
 		appRoot := filepath.Join("testdata", "simple_app_with_target")
 
-		app, err := dagger.PackBuild(appRoot, goURI, depURI)
+		app, err = dagger.PackBuild(appRoot, goURI, depURI)
 		Expect(err).NotTo(HaveOccurred())
-		defer app.Destroy()
 
 		Expect(app.Start()).To(Succeed())
 		body, _, err := app.HTTPGet("/")
@@ -80,7 +94,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 	it("uses the vendored packages when the app is vendored", func() {
 		appDir := filepath.Join("testdata", "vendored_app")
-		app, err := dagger.PackBuild(appDir, goURI, depURI)
+		app, err = dagger.PackBuild(appDir, goURI, depURI)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(app.BuildLogs()).To(ContainSubstring("Note: skipping `dep ensure` due to non-empty vendor directory."))
@@ -93,17 +107,20 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	it("uses updated source code on a rebuild", func() {
 		appRoot := filepath.Join("testdata", "with_lockfile")
 
-		app, err := dagger.PackBuild(appRoot, goURI, depURI)
+		app, err = dagger.PackBuild(appRoot, goURI, depURI)
 		Expect(err).NotTo(HaveOccurred())
-		defer app.Destroy()
 
 		Expect(err).ToNot(HaveOccurred())
 		Expect(app.BuildLogs()).To(MatchRegexp("Dep.*: Contributing to layer"))
 
 		_, imageID, _, err := app.Info()
+		Expect(err).NotTo(HaveOccurred())
+
 		appRoot = filepath.Join("testdata", "with_lockfile_modified")
 		app, err = dagger.PackBuildNamedImage(imageID, appRoot, goURI, depURI)
+		Expect(err).NotTo(HaveOccurred())
 		Expect(app.Start()).To(Succeed())
+
 		body, _, err := app.HTTPGet("/")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(body).To(ContainSubstring("The source changed!"))
@@ -111,9 +128,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 	when("the app specifies ldflags", func() {
 		it("should build the app with those build flags", func() {
-			app, err := dagger.PackBuild(filepath.Join("testdata", "simple_app_with_target_and_ldflags"), goURI, depURI)
+			app, err = dagger.PackBuild(filepath.Join("testdata", "simple_app_with_target_and_ldflags"), goURI, depURI)
 			Expect(err).ToNot(HaveOccurred())
-			defer app.Destroy()
 
 			Expect(app.Start()).To(Succeed())
 

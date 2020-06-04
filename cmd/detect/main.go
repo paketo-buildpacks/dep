@@ -64,11 +64,7 @@ func runDetect(context detect.Detect) (int, error) {
 			if environmentTargets == "" {
 				return detect.FailStatusCode, errors.New(EmptyTargetEnvVariableMsg)
 			}
-			var targets []string
-			for _, target := range strings.Split(environmentTargets, string(os.PathListSeparator)) {
-				targets = append(targets, target)
-			}
-			buildpackYaml.Config.Targets = targets
+			buildpackYaml.Config.Targets = strings.Split(environmentTargets, string(os.PathListSeparator))
 		}
 		metadata := buildplan.Metadata{
 			"build": true,
