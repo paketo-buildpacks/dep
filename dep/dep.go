@@ -219,7 +219,7 @@ func (c *Contributor) ContributeStartCommand() error {
 			{
 				Type:    "web",
 				Command: appBinaryPath,
-				Direct:  c.context.Stack == "org.cloudfoundry.stacks.tiny" || c.context.Stack == "io.paketo.stacks.tiny",
+				Direct:  c.context.Stack == "io.paketo.stacks.tiny",
 			},
 		},
 	})
