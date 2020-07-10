@@ -1,5 +1,4 @@
-.bin/
-.idea/
-*.tgz
-/bin/
-dep-cnb_*
+.DS_Store
+.idea
+/.bin
+/build
