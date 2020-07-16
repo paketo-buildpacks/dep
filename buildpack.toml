@@ -1,30 +1,29 @@
 api = "0.2"
 
 [buildpack]
-id = "paketo-buildpacks/dep"
-name = "Dep Buildpack"
-version = "{{ .Version }}"
-homepage = "https://github.com/paketo-buildpacks/dep"
+  id = "paketo-buildpacks/dep"
+  name = "Dep Buildpack"
+  homepage = "https://github.com/paketo-buildpacks/dep"
 
 [metadata]
-include_files = ["bin/build","bin/detect","buildpack.toml","go.mod","go.sum"]
-pre_package = "./scripts/build.sh"
+  include_files = ["bin/build", "bin/detect", "bin/run", "buildpack.toml"]
+  pre_package = "./scripts/build.sh"
 
-[[metadata.dependencies]]
-id = "dep"
-name = "Dep"
-sha256 = "79b3ab9e67bf51bae787faaa5c78782752d0e39ea7b0d99e485a181b63a49559"
-source = "https://github.com/golang/dep/archive/v0.5.4.tar.gz"
-source_sha256 = "929c8f759838f98323211ba408a831ea80d93b75beda8584b6d950f393a3298a"
-stacks = ["org.cloudfoundry.stacks.cflinuxfs3","io.buildpacks.stacks.bionic", "io.paketo.stacks.tiny"]
-uri = "https://buildpacks.cloudfoundry.org/dependencies/dep/dep-v0.5.4-linux-x64-cflinuxfs3-79b3ab9e.tgz"
-version = "0.5.4"
-
-[[stacks]]
-id = "org.cloudfoundry.stacks.cflinuxfs3"
+  [[metadata.dependencies]]
+    id = "dep"
+    name = "Dep"
+    sha256 = "79b3ab9e67bf51bae787faaa5c78782752d0e39ea7b0d99e485a181b63a49559"
+    source = "https://github.com/golang/dep/archive/v0.5.4.tar.gz"
+    source_sha256 = "929c8f759838f98323211ba408a831ea80d93b75beda8584b6d950f393a3298a"
+    stacks = ["org.cloudfoundry.stacks.cflinuxfs3","io.buildpacks.stacks.bionic", "io.paketo.stacks.tiny"]
+    uri = "https://buildpacks.cloudfoundry.org/dependencies/dep/dep-v0.5.4-linux-x64-cflinuxfs3-79b3ab9e.tgz"
+    version = "0.5.4"
 
 [[stacks]]
-id = "io.buildpacks.stacks.bionic"
+  id = "io.buildpacks.stacks.bionic"
 
 [[stacks]]
-id = "io.paketo.stacks.tiny"
+  id = "org.cloudfoundry.stacks.cflinuxfs3"
+
+[[stacks]]
+  id = "io.paketo.stacks.tiny"

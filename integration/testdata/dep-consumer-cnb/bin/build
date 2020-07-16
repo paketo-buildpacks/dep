@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -eu
+
+if command -v dep; then
+  echo "dep executable found at $(command -v dep)"
+  exit 0
+fi
+echo "dep executable not found"
+exit 1
