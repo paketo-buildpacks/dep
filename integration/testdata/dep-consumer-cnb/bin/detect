@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-buildplan=2
-echo '[[requires]]
-name = "dep"' > ${!buildplan}

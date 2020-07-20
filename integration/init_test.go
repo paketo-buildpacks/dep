@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,53 +19,61 @@ import (
 )
 
 var (
-	depBuildpack         string
-	offlineDepBuildpack  string
-	depConsumerBuildpack string
-	root                 string
-	version              string
-
+	buildpack          string
+	buildPlanBuildpack string
+	//offlineBuildpack   string
 	buildpackInfo struct {
 		Buildpack struct {
 			ID   string
 			Name string
 		}
 	}
+	config struct {
+		BuildPlan string `json:"build-plan"`
+	}
 )
+
+var version string
 
 func TestIntegration(t *testing.T) {
 	Expect := NewWithT(t).Expect
 
-	var err error
-	root, err = filepath.Abs("./..")
+	root, err := filepath.Abs("./..")
 	Expect(err).ToNot(HaveOccurred())
 
 	file, err := os.Open("../buildpack.toml")
 	Expect(err).NotTo(HaveOccurred())
-	defer file.Close()
 
 	_, err = toml.DecodeReader(file, &buildpackInfo)
 	Expect(err).NotTo(HaveOccurred())
+	Expect(file.Close()).To(Succeed())
+
+	file, err = os.Open("../integration.json")
+	Expect(err).NotTo(HaveOccurred())
+
+	Expect(json.NewDecoder(file).Decode(&config)).To(Succeed())
+	Expect(file.Close()).To(Succeed())
 
 	buildpackStore := occam.NewBuildpackStore()
 
 	version, err = GetGitVersion()
 	Expect(err).NotTo(HaveOccurred())
 
-	depBuildpack, err = buildpackStore.Get.
+	buildpack, err = buildpackStore.Get.
 		WithVersion(version).
 		Execute(root)
 	Expect(err).NotTo(HaveOccurred())
 
-	// todo
-	// offlineDepBuildpack, err = buildpackStore.Get.
+	// todo offline tests
+	// offlineBuildpack, err = buildpackStore.Get.
 	// 	WithOfflineDependencies().
 	// 	WithVersion(version).
 	// 	Execute(root)
 	// Expect(err).NotTo(HaveOccurred())
 
-	// This buildpack tries to use dep in its build phase
-	depConsumerBuildpack = "./testdata/dep-consumer-cnb"
+	buildPlanBuildpack, err = buildpackStore.Get.
+		Execute(config.BuildPlan)
+	Expect(err).NotTo(HaveOccurred())
 
 	SetDefaultEventuallyTimeout(5 * time.Second)
 

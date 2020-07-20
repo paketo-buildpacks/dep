@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/paketo-buildpacks/occam"
 	"github.com/sclevine/spec"
@@ -46,7 +47,7 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 			Expect(os.RemoveAll(source)).To(Succeed())
 		})
 
-		it("makes dep available on PATH to subsequent buildpacks", func() {
+		it("builds an oci image with dep", func() {
 			var err error
 			source, err = occam.Source(filepath.Join("testdata", "default_app"))
 			Expect(err).NotTo(HaveOccurred())
@@ -55,8 +56,8 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 			image, logs, err = pack.WithNoColor().Build.
 				WithNoPull().
 				WithBuildpacks(
-					depBuildpack,
-					depConsumerBuildpack,
+					buildpack,
+					buildPlanBuildpack,
 				).
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred(), logs.String())
@@ -64,11 +65,19 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs).To(ContainLines(
 				fmt.Sprintf("%s %s", buildpackInfo.Buildpack.Name, version),
 				"  Executing build process",
-				MatchRegexp(`    Installing Dep`),
-				MatchRegexp(`      Completed in \d+\.\d+`),
-				"",
-				"dep executable found at ",
+				"    Installing Dep",
+				//MatchRegexp(`      Completed in \d+\.\d+`),
 			))
+
+			container, err = docker.Container.Run.WithCommand("dep --help && sleep infinity").Execute(image.ID)
+			Expect(err).NotTo(HaveOccurred())
+
+			time.Sleep(5 * time.Second)
+			out, err := docker.Container.Logs.Execute(container.ID)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(out.String()).To(ContainSubstring("Dep is a tool for managing dependencies for Go projects"))
+
 		})
 	})
 }
