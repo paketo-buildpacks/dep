@@ -1,0 +1,5 @@
+[[requires]]
+  name = "dep"
+
+  [requires.metadata]
+    launch = true

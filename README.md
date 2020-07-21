@@ -1,13 +1,14 @@
 # Dep Cloud Native Buildpack
 
-The Go Dep CNB builds a Go application binary, using the
-[`dep`](https://golang.github.io/dep/docs/introduction.html) tool to package
-dependencies.
+The Dep CNB provides the
+[`dep`](https://golang.github.io/dep/docs/introduction.html) executable. The
+buildpack installs dep onto the `$PATH` which makes it available for subsequent
+buildpacks and/or the final container image.
 
 ## Integration
 
-The Dep CNB provides dep as a dependency. Downstream
-buildpacks can require the node dependency by generating a [Build Plan
+The Dep CNB provides `dep` as a dependency. Downstream
+buildpacks can require the dep dependency by generating a [Build Plan
 TOML](https://github.com/buildpacks/spec/blob/master/buildpack.md#build-plan-toml)
 file that looks like the following:
 
@@ -26,10 +27,16 @@ file that looks like the following:
   [requires.metadata]
 
     # Setting the build flag to true will ensure that the Dep
-    # depdendency is available on the $PATH for subsequent buildpacks during
+    # dependency is available on the $PATH for subsequent buildpacks during
     # their build phase. If you are writing a buildpack that needs to run Dep
     # during its build process, this flag should be set to true.
     build = true
+
+    # Setting the launch flag to true will ensure that the Dep
+    # dependency is available on the $PATH for the running application. If you are
+    # writing an application that needs to run Dep at runtime, this flag should
+    # be set to true.
+    launch = true
 ```
 
 ## Usage
@@ -42,20 +49,4 @@ This builds the buildpack's Go source using GOOS=linux by default. You can suppl
 
 ## `buildpack.yml` Configuration
 
-The `dep` requires a `buildpack.yml` file in the root of the application directory, and must contain the `import-path` directive.
-
-```yaml
-go:
-  # this sets the go import-path (required)
-  import-path: hubgit.net/user/app
-
-  # this allows you to override the location of the main package of the app
-  targets: ["./cmd/web"]
-
-  # this allows you to set Go ldflags for compilation
-  ldflags:
-    main.version: v1.2.3
-    main.sha: 1234567
-```
-
-See `integration/testdata/` subfolders for examples.
+The dep buildpack does not support configurations via `buildpack.yml`.
