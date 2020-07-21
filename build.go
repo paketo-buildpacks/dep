@@ -2,8 +2,10 @@ package dep
 
 import (
 	"path/filepath"
+	"time"
 
 	"github.com/paketo-buildpacks/packit"
+	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/postal"
 )
 
@@ -27,6 +29,7 @@ func Build(
 	entries EntryResolver,
 	dependencies DependencyManager,
 	planRefinery BuildPlanRefinery,
+	clock chronos.Clock,
 	logger LogEmitter,
 ) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
@@ -34,12 +37,15 @@ func Build(
 
 		entry := entries.Resolve(context.Plan.Entries)
 
-		dependency, err := dependencies.Resolve(filepath.Join(context.CNBPath, "buildpack.toml"), entry.Name, entry.Version, context.Stack)
+		dependency, err := dependencies.Resolve(
+			filepath.Join(context.CNBPath, "buildpack.toml"),
+			entry.Name,
+			entry.Version,
+			context.Stack)
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
 
-		// todo log SelectedDependency
 		bom := planRefinery.BillOfMaterials(dependency)
 
 		depLayer, err := context.Layers.Get(Dep)
@@ -51,7 +57,18 @@ func Build(
 		depLayer.Build = entry.Metadata["build"] == true
 		depLayer.Cache = entry.Metadata["build"] == true
 
-		// todo check for possible layer reuse
+		cachedSHA, ok := depLayer.Metadata[DependencyCacheKey].(string)
+		if ok && cachedSHA == dependency.SHA256 {
+			logger.Process("Reusing cached layer %s", depLayer.Path)
+			logger.Break()
+
+			return packit.BuildResult{
+				Plan: packit.BuildpackPlan{
+					Entries: []packit.BuildpackPlanEntry{bom},
+				},
+				Layers: []packit.Layer{depLayer},
+			}, nil
+		}
 
 		logger.Process("Executing build process")
 
@@ -61,9 +78,19 @@ func Build(
 		}
 
 		logger.Subprocess("Installing Dep")
-		err = dependencies.Install(dependency, context.CNBPath, depLayer.Path)
+
+		duration, err := clock.Measure(func() error {
+			return dependencies.Install(dependency, context.CNBPath, depLayer.Path)
+		})
 		if err != nil {
 			return packit.BuildResult{}, err
+		}
+
+		logger.Action("Completed in %s", duration.Round(time.Millisecond))
+
+		depLayer.Metadata = map[string]interface{}{
+			DependencyCacheKey: dependency.SHA256,
+			"built_at":         clock.Now().Format(time.RFC3339Nano),
 		}
 
 		return packit.BuildResult{

@@ -1,5 +1,6 @@
 package dep
 
 const (
-	Dep = "dep"
+	Dep                = "dep"
+	DependencyCacheKey = "dependency-sha"
 )

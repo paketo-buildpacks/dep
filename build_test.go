@@ -7,10 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/paketo-buildpacks/dep"
 	"github.com/paketo-buildpacks/dep/fakes"
 	"github.com/paketo-buildpacks/packit"
+	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/postal"
 	"github.com/sclevine/spec"
 
@@ -24,12 +26,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		layersDir         string
 		workingDir        string
 		cnbDir            string
+		timestamp         time.Time
 		entryResolver     *fakes.EntryResolver
 		dependencyManager *fakes.DependencyManager
 		planRefinery      *fakes.BuildPlanRefinery
 		buffer            *bytes.Buffer
-
-		// timeStamp time.Time
 
 		build packit.BuildFunc
 	)
@@ -47,6 +48,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		buffer = bytes.NewBuffer(nil)
 		logEmitter := dep.NewLogEmitter(buffer)
+
+		timestamp = time.Now()
+		clock := chronos.NewClock(func() time.Time {
+			return timestamp
+		})
 
 		entryResolver = &fakes.EntryResolver{}
 		entryResolver.ResolveCall.Returns.BuildpackPlanEntry = packit.BuildpackPlanEntry{
@@ -73,7 +79,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				"uri":    "dep-dependency-uri",
 			},
 		}
-		build = dep.Build(entryResolver, dependencyManager, planRefinery, logEmitter)
+		build = dep.Build(entryResolver, dependencyManager, planRefinery, clock, logEmitter)
 	})
 
 	it.After(func() {
@@ -82,7 +88,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(os.RemoveAll(workingDir)).To(Succeed())
 	})
 
-	it("returns a result that builds correctly", func() {
+	it("returns a result that installs dep", func() {
 		result, err := build(packit.BuildContext{
 			WorkingDir: workingDir,
 			CNBPath:    cnbDir,
@@ -126,10 +132,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Build:     false,
 					Launch:    false,
 					Cache:     false,
-					// Metadata: map[string]interface{}{
-					// 	.DepKey: "",
-					// 	"built_at":        timeStamp.Format(time.RFC3339Nano),
-					// },
+					Metadata: map[string]interface{}{
+						dep.DependencyCacheKey: "dep-dependency-sha",
+						"built_at":             timestamp.Format(time.RFC3339Nano),
+					},
 				},
 			},
 		}))
@@ -229,10 +235,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						Build:     true,
 						Launch:    true,
 						Cache:     true,
-						// Metadata: map[string]interface{}{
-						// 	.DepKey: "",
-						// 	"built_at":        timeStamp.Format(time.RFC3339Nano),
-						// },
+						Metadata: map[string]interface{}{
+							dep.DependencyCacheKey: "dep-dependency-sha",
+							"built_at":             timestamp.Format(time.RFC3339Nano),
+						},
 					},
 				},
 			}))
