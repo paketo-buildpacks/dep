@@ -3,7 +3,7 @@
 The Dep CNB provides the
 [`dep`](https://golang.github.io/dep/docs/introduction.html) executable. The
 buildpack installs dep onto the `$PATH` which makes it available for subsequent
-buildpacks.
+buildpacks and/or the final container image.
 
 ## Integration
 
@@ -31,6 +31,12 @@ file that looks like the following:
     # their build phase. If you are writing a buildpack that needs to run Dep
     # during its build process, this flag should be set to true.
     build = true
+
+    # Setting the launch flag to true will ensure that the Dep
+    # dependency is available on the $PATH for the running application. If you are
+    # writing an application that needs to run Dep at runtime, this flag should
+    # be set to true.
+    launch = true
 ```
 
 ## Usage
