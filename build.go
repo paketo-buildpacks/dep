@@ -87,6 +87,7 @@ func Build(
 		}
 
 		logger.Action("Completed in %s", duration.Round(time.Millisecond))
+		logger.Break()
 
 		depLayer.Metadata = map[string]interface{}{
 			DependencyCacheKey: dependency.SHA256,
