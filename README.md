@@ -9,7 +9,7 @@ buildpacks and/or the final container image.
 
 The Dep CNB provides `dep` as a dependency. Downstream
 buildpacks can require the dep dependency by generating a [Build Plan
-TOML](https://github.com/buildpacks/spec/blob/master/buildpack.md#build-plan-toml)
+TOML](https://github.com/buildpacks/spec/blob/main/buildpack.md#build-plan-toml)
 file that looks like the following:
 
 ```toml
