@@ -6,16 +6,31 @@ on:
     - submitted
 
 jobs:
-  state:
-    name: State
+  pull_request:
+    name: Fetch Pull Request Details
     runs-on: ubuntu-latest
     steps:
-    - run: |
-        cat "${GITHUB_EVENT_PATH}"
+    - name: Fetch
+      id: fetch
+      env:
+        NUMBER: ${{ github.event.pull_request.number }}
+        GITHUB_TOKEN: ${{ secrets.PAKETO_BOT_GITHUB_TOKEN }}
+      run: |
+        payload="$(
+          curl "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/${NUMBER}" \
+            --silent \
+            --location \
+            --header "Authorization: token ${GITHUB_TOKEN}"
+        )"
+
+        echo "::set-output name=payload::$(echo "${payload}" | jq -r -c .)"
+    outputs:
+      payload: ${{ steps.fetch.outputs.payload }}
 
   merge:
     name: Merge
-    if: ${{ github.event.review.user.login == 'paketo-bot-reviewer' && github.event.pull_request.mergeable_state == 'clean' }}
+    needs: pull_request
+    if: ${{ github.event.review.user.login == 'paketo-bot-reviewer' && fromJSON(needs.pull_request.outputs.payload).mergeable_state == 'clean' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -30,7 +45,8 @@ jobs:
 
   rebase:
     name: Rebase
-    if: ${{ github.event.review.user.login == 'paketo-bot-reviewer' && github.event.pull_request.mergeable_state == 'behind' }}
+    needs: pull_request
+    if: ${{ github.event.review.user.login == 'paketo-bot-reviewer' && fromJSON(needs.pull_request.outputs.payload).mergeable_state == 'behind' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
