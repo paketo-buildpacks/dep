@@ -31,7 +31,7 @@ jobs:
   merge:
     name: Merge
     needs: pull_request
-    #if: ${{ fromJSON(needs.pull_request.outputs.payload).mergeable_state == 'clean' }}
+    if: ${{ fromJSON(needs.pull_request.outputs.payload).mergeable_state != 'banana' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
