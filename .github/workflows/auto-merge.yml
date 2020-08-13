@@ -6,6 +6,13 @@ on:
     - submitted
 
 jobs:
+  state:
+    name: State
+    runs-on: ubuntu-latest
+    steps:
+    - run: |
+        echo "Mergeable State: ${{ github.event.pull_request.mergeable_state }}"
+
   merge:
     name: Merge
     if: ${{ github.event.review.user.login == 'paketo-bot-reviewer' && github.event.pull_request.mergeable_state == 'clean' }}
