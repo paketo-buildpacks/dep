@@ -31,11 +31,18 @@ jobs:
   merge:
     name: Merge
     needs: pull_request
-    if: ${{ fromJSON(needs.pull_request.outputs.payload).mergeable_state == 'clean' }}
+    #if: ${{ fromJSON(needs.pull_request.outputs.payload).mergeable_state == 'clean' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+
+    - name: State
+      env:
+        CAN_MERGE: ${{ fromJSON(needs.pull_request.outputs.payload).mergeable_state == 'clean' }}
+      run: |
+        echo "Can merge? ${CAN_MERGE}"
+        exit 1
 
     - name: Merge
       uses: paketo-buildpacks/github-config/actions/pull-request/merge@automerge
