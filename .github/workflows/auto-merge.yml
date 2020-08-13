@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - run: |
-        echo "Mergeable State: ${{ github.event.pull_request.mergeable_state }}"
+        cat "${GITHUB_EVENT_PATH}"
 
   merge:
     name: Merge
