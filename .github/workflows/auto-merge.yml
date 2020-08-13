@@ -24,6 +24,11 @@ jobs:
         )"
 
         echo "::set-output name=payload::$(echo "${payload}" | jq -r -c .)"
+    - name: State
+      env:
+        STATE: ${{ fromJSON(steps.fetch.outputs.payload).mergeable_state }}
+      run: |
+        echo "Mergeable State: ${STATE}"
     outputs:
       payload: ${{ steps.fetch.outputs.payload }}
 
