@@ -2,7 +2,7 @@ api = "0.2"
 
 [buildpack]
   id = "paketo-buildpacks/dep"
-  name = "Dep Buildpack"
+  name = "Paketo Dep Buildpack"
   homepage = "https://github.com/paketo-buildpacks/dep"
 
 [metadata]
