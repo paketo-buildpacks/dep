@@ -24,24 +24,27 @@ jobs:
         )"
 
         echo "::set-output name=payload::$(echo "${payload}" | jq -r -c .)"
-    - name: State
-      env:
-        STATE: ${{ fromJSON(steps.fetch.outputs.payload).mergeable_state }}
-      run: |
-        echo "Mergeable State: ${STATE}"
     outputs:
       payload: ${{ steps.fetch.outputs.payload }}
 
   merge:
     name: Merge
     needs: pull_request
-    if: ${{ github.event.review.user.login == 'paketo-bot-reviewer' && fromJSON(needs.pull_request.outputs.payload).mergeable_state == 'clean' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: State
+      env:
+        STATE: ${{ fromJSON(needs.pull_request.outputs.payload).mergeable_state }}
+        REVIEWER: ${{ github.event.review.user.login }}
+      run: |
+        echo "Reviewer: ${REVIEWER}"
+        echo "Mergeable State: ${STATE}"
+
     - name: Merge
+      if: ${{ github.event.review.user.login == 'paketo-bot-reviewer' && fromJSON(needs.pull_request.outputs.payload).mergeable_state == 'clean' }}
       uses: paketo-buildpacks/github-config/actions/pull-request/merge@main
       with:
         user: paketo-bot
