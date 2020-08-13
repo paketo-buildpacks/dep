@@ -12,16 +12,13 @@ import (
 
 func main() {
 	logEmitter := dep.NewLogEmitter(os.Stdout)
-	entryResolver := dep.NewPlanEntryResolver(logEmitter)
-	dependencyManager := postal.NewService(cargo.NewTransport())
-	planRefinery := dep.NewPlanRefinery()
 
 	packit.Run(
 		dep.Detect(),
 		dep.Build(
-			entryResolver,
-			dependencyManager,
-			planRefinery,
+			dep.NewPlanEntryResolver(logEmitter),
+			postal.NewService(cargo.NewTransport()),
+			dep.NewPlanRefinery(),
 			chronos.DefaultClock,
 			logEmitter,
 		),
