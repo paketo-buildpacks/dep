@@ -37,10 +37,15 @@ func Build(
 
 		entry := entries.Resolve(context.Plan.Entries)
 
+		version, ok := entry.Metadata["version"].(string)
+		if !ok {
+			version = "default"
+		}
+
 		dependency, err := dependencies.Resolve(
 			filepath.Join(context.CNBPath, "buildpack.toml"),
 			entry.Name,
-			entry.Version,
+			version,
 			context.Stack)
 		if err != nil {
 			return packit.BuildResult{}, err
