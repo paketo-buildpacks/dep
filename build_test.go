@@ -150,6 +150,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(dependencyManager.ResolveCall.Receives.Path).To(Equal(filepath.Join(cnbDir, "buildpack.toml")))
 		Expect(dependencyManager.ResolveCall.Receives.Id).To(Equal("dep"))
+		Expect(dependencyManager.ResolveCall.Receives.Version).To(Equal("default"))
 		Expect(dependencyManager.ResolveCall.Receives.Stack).To(Equal("some-stack"))
 
 		Expect(dependencyManager.InstallCall.Receives.Dependency).To(Equal(postal.Dependency{
@@ -176,13 +177,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(buffer.String()).To(ContainSubstring("Executing build process"))
 	})
 
-	context("when the build plan entry includes the build, launch flag", func() {
+	context("when the build plan entry includes the build, launch flags and a version", func() {
 		it.Before(func() {
 			entryResolver.ResolveCall.Returns.BuildpackPlanEntry = packit.BuildpackPlanEntry{
 				Name: "dep",
 				Metadata: map[string]interface{}{
-					"launch": true,
-					"build":  true,
+					"launch":  true,
+					"build":   true,
+					"version": "dep-dependency-version",
 				},
 			}
 		})
@@ -201,8 +203,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						{
 							Name: "dep",
 							Metadata: map[string]interface{}{
-								"launch": true,
-								"build":  true,
+								"launch":  true,
+								"build":   true,
+								"version": "dep-dependency-version",
 							},
 						},
 					},
@@ -242,6 +245,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					},
 				},
 			}))
+
+			Expect(dependencyManager.ResolveCall.Receives.Path).To(Equal(filepath.Join(cnbDir, "buildpack.toml")))
+			Expect(dependencyManager.ResolveCall.Receives.Id).To(Equal("dep"))
+			Expect(dependencyManager.ResolveCall.Receives.Version).To(Equal("dep-dependency-version"))
+			Expect(dependencyManager.ResolveCall.Receives.Stack).To(Equal("some-stack"))
+
 		})
 	})
 
