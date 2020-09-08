@@ -297,7 +297,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		context("when the layers directory cannot be written to", func() {
 			it.Before(func() {
-				Expect(os.Chmod(layersDir, 0000)).To(Succeed())
+				Expect(os.Chmod(layersDir, 4444)).To(Succeed())
 			})
 
 			it.After(func() {
