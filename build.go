@@ -58,10 +58,6 @@ func Build(
 			return packit.BuildResult{}, err
 		}
 
-		depLayer.Launch = entry.Metadata["launch"] == true
-		depLayer.Build = entry.Metadata["build"] == true
-		depLayer.Cache = entry.Metadata["build"] == true
-
 		cachedSHA, ok := depLayer.Metadata[DependencyCacheKey].(string)
 		if ok && cachedSHA == dependency.SHA256 {
 			logger.Process("Reusing cached layer %s", depLayer.Path)
@@ -77,10 +73,14 @@ func Build(
 
 		logger.Process("Executing build process")
 
-		err = depLayer.Reset()
+		depLayer, err = depLayer.Reset()
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
+
+		depLayer.Launch = entry.Metadata["launch"] == true
+		depLayer.Build = entry.Metadata["build"] == true
+		depLayer.Cache = entry.Metadata["build"] == true
 
 		logger.Subprocess("Installing Dep")
 
