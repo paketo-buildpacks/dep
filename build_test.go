@@ -14,6 +14,7 @@ import (
 	"github.com/paketo-buildpacks/packit"
 	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/postal"
+	"github.com/paketo-buildpacks/packit/scribe"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -23,14 +24,15 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		layersDir         string
-		workingDir        string
-		cnbDir            string
-		timestamp         time.Time
+		layersDir  string
+		workingDir string
+		cnbDir     string
+		timestamp  time.Time
+		buffer     *bytes.Buffer
+
 		entryResolver     *fakes.EntryResolver
 		dependencyManager *fakes.DependencyManager
 		planRefinery      *fakes.BuildPlanRefinery
-		buffer            *bytes.Buffer
 
 		build packit.BuildFunc
 	)
@@ -47,7 +49,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		buffer = bytes.NewBuffer(nil)
-		logEmitter := dep.NewLogEmitter(buffer)
+		logEmitter := scribe.NewEmitter(buffer)
 
 		timestamp = time.Now()
 		clock := chronos.NewClock(func() time.Time {
@@ -142,10 +144,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(filepath.Join(layersDir, "dep")).To(BeADirectory())
 
-		Expect(entryResolver.ResolveCall.Receives.BuildpackPlanEntrySlice).To(Equal([]packit.BuildpackPlanEntry{
-			{
-				Name: "dep",
-			},
+		Expect(entryResolver.ResolveCall.Receives.Name).To(Equal("dep"))
+		Expect(entryResolver.ResolveCall.Receives.Entries).To(Equal([]packit.BuildpackPlanEntry{
+			{Name: "dep"},
+		}))
+
+		Expect(entryResolver.MergeLayerTypesCall.Receives.Name).To(Equal("dep"))
+		Expect(entryResolver.MergeLayerTypesCall.Receives.Entries).To(Equal([]packit.BuildpackPlanEntry{
+			{Name: "dep"},
 		}))
 
 		Expect(dependencyManager.ResolveCall.Receives.Path).To(Equal(filepath.Join(cnbDir, "buildpack.toml")))
@@ -179,6 +185,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	context("when the build plan entry includes the build, launch flags and a version", func() {
 		it.Before(func() {
+			entryResolver.MergeLayerTypesCall.Returns.Launch = true
+			entryResolver.MergeLayerTypesCall.Returns.Build = true
+
 			entryResolver.ResolveCall.Returns.BuildpackPlanEntry = packit.BuildpackPlanEntry{
 				Name: "dep",
 				Metadata: map[string]interface{}{

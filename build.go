@@ -7,11 +7,13 @@ import (
 	"github.com/paketo-buildpacks/packit"
 	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/postal"
+	"github.com/paketo-buildpacks/packit/scribe"
 )
 
 //go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
 type EntryResolver interface {
-	Resolve([]packit.BuildpackPlanEntry) packit.BuildpackPlanEntry
+	Resolve(name string, entries []packit.BuildpackPlanEntry, priorites []interface{}) (packit.BuildpackPlanEntry, []packit.BuildpackPlanEntry)
+	MergeLayerTypes(name string, entries []packit.BuildpackPlanEntry) (launch bool, build bool)
 }
 
 //go:generate faux --interface DependencyManager --output fakes/dependency_manager.go
@@ -26,16 +28,16 @@ type BuildPlanRefinery interface {
 }
 
 func Build(
-	entries EntryResolver,
+	entryResolver EntryResolver,
 	dependencies DependencyManager,
 	planRefinery BuildPlanRefinery,
 	clock chronos.Clock,
-	logger LogEmitter,
+	logger scribe.Emitter,
 ) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
-		entry := entries.Resolve(context.Plan.Entries)
+		entry, _ := entryResolver.Resolve(Dep, context.Plan.Entries, nil)
 
 		version, ok := entry.Metadata["version"].(string)
 		if !ok {
@@ -78,9 +80,8 @@ func Build(
 			return packit.BuildResult{}, err
 		}
 
-		depLayer.Launch = entry.Metadata["launch"] == true
-		depLayer.Build = entry.Metadata["build"] == true
-		depLayer.Cache = entry.Metadata["build"] == true
+		depLayer.Launch, depLayer.Build = entryResolver.MergeLayerTypes(Dep, context.Plan.Entries)
+		depLayer.Cache = depLayer.Build
 
 		logger.Subprocess("Installing Dep")
 
