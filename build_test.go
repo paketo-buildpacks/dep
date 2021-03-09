@@ -126,14 +126,15 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			},
 			Layers: []packit.Layer{
 				{
-					Name:      "dep",
-					Path:      filepath.Join(layersDir, "dep"),
-					SharedEnv: packit.Environment{},
-					BuildEnv:  packit.Environment{},
-					LaunchEnv: packit.Environment{},
-					Build:     false,
-					Launch:    false,
-					Cache:     false,
+					Name:             "dep",
+					Path:             filepath.Join(layersDir, "dep"),
+					SharedEnv:        packit.Environment{},
+					BuildEnv:         packit.Environment{},
+					LaunchEnv:        packit.Environment{},
+					ProcessLaunchEnv: map[string]packit.Environment{},
+					Build:            false,
+					Launch:           false,
+					Cache:            false,
 					Metadata: map[string]interface{}{
 						dep.DependencyCacheKey: "dep-dependency-sha",
 						"built_at":             timestamp.Format(time.RFC3339Nano),
@@ -239,14 +240,15 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				},
 				Layers: []packit.Layer{
 					{
-						Name:      "dep",
-						Path:      filepath.Join(layersDir, "dep"),
-						SharedEnv: packit.Environment{},
-						BuildEnv:  packit.Environment{},
-						LaunchEnv: packit.Environment{},
-						Build:     true,
-						Launch:    true,
-						Cache:     true,
+						Name:             "dep",
+						Path:             filepath.Join(layersDir, "dep"),
+						SharedEnv:        packit.Environment{},
+						BuildEnv:         packit.Environment{},
+						LaunchEnv:        packit.Environment{},
+						ProcessLaunchEnv: map[string]packit.Environment{},
+						Build:            true,
+						Launch:           true,
+						Cache:            true,
 						Metadata: map[string]interface{}{
 							dep.DependencyCacheKey: "dep-dependency-sha",
 							"built_at":             timestamp.Format(time.RFC3339Nano),
@@ -306,7 +308,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		context("when the layers directory cannot be written to", func() {
 			it.Before(func() {
-				Expect(os.Chmod(layersDir, 0000)).To(Succeed())
+				Expect(os.Chmod(layersDir, 0500)).To(Succeed())
 			})
 
 			it.After(func() {
