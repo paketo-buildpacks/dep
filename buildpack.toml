@@ -5,9 +5,9 @@ api = "0.4"
   id = "paketo-buildpacks/dep"
   name = "Paketo Dep Buildpack"
 
-[[buildpack.licenses]]
-type = "Apache-2.0"
-uri  = "https://github.com/paketo-buildpacks/dep/blob/main/LICENSE"
+  [[buildpack.licenses]]
+    type = "Apache-2.0"
+    uri = "https://github.com/paketo-buildpacks/dep/blob/main/LICENSE"
 
 [metadata]
   include-files = ["bin/build", "bin/detect", "bin/run", "buildpack.toml"]
