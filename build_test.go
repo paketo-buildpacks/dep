@@ -3,7 +3,6 @@ package dep_test
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,20 +31,19 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		entryResolver     *fakes.EntryResolver
 		dependencyManager *fakes.DependencyManager
-		planRefinery      *fakes.BuildPlanRefinery
 
 		build packit.BuildFunc
 	)
 
 	it.Before(func() {
 		var err error
-		layersDir, err = ioutil.TempDir("", "layers")
+		layersDir, err = os.MkdirTemp("", "layers")
 		Expect(err).NotTo(HaveOccurred())
 
-		cnbDir, err = ioutil.TempDir("", "cnb")
+		cnbDir, err = os.MkdirTemp("", "cnb")
 		Expect(err).NotTo(HaveOccurred())
 
-		workingDir, err = ioutil.TempDir("", "working-dir")
+		workingDir, err = os.MkdirTemp("", "working-dir")
 		Expect(err).NotTo(HaveOccurred())
 
 		buffer = bytes.NewBuffer(nil)
@@ -71,17 +69,19 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Version: "dep-dependency-version",
 		}
 
-		planRefinery = &fakes.BuildPlanRefinery{}
-		planRefinery.BillOfMaterialsCall.Returns.BuildpackPlanEntry = packit.BuildpackPlanEntry{
-			Name: "dep",
-			Metadata: map[string]interface{}{
-				"name":   "dep-dependency-name",
-				"sha256": "dep-dependency-sha",
-				"stacks": []string{"some-stack"},
-				"uri":    "dep-dependency-uri",
+		dependencyManager.GenerateBillOfMaterialsCall.Returns.BOMEntrySlice = []packit.BOMEntry{
+			{
+				Name: "dep",
+				Metadata: map[string]interface{}{
+					"name":   "dep-dependency-name",
+					"sha256": "dep-dependency-sha",
+					"stacks": []string{"some-stack"},
+					"uri":    "dep-dependency-uri",
+				},
 			},
 		}
-		build = dep.Build(entryResolver, dependencyManager, planRefinery, clock, logEmitter)
+
+		build = dep.Build(entryResolver, dependencyManager, clock, logEmitter)
 	})
 
 	it.After(func() {
@@ -106,24 +106,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					},
 				},
 			},
-			Layers: packit.Layers{Path: layersDir},
+			Platform: packit.Platform{Path: "platform"},
+			Layers:   packit.Layers{Path: layersDir},
 		})
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result).To(Equal(packit.BuildResult{
-			Plan: packit.BuildpackPlan{
-				Entries: []packit.BuildpackPlanEntry{
-					{
-						Name: "dep",
-						Metadata: map[string]interface{}{
-							"name":   "dep-dependency-name",
-							"sha256": "dep-dependency-sha",
-							"stacks": []string{"some-stack"},
-							"uri":    "dep-dependency-uri",
-						},
-					},
-				},
-			},
 			Layers: []packit.Layer{
 				{
 					Name:             "dep",
@@ -160,7 +148,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(dependencyManager.ResolveCall.Receives.Version).To(Equal("default"))
 		Expect(dependencyManager.ResolveCall.Receives.Stack).To(Equal("some-stack"))
 
-		Expect(dependencyManager.InstallCall.Receives.Dependency).To(Equal(postal.Dependency{
+		Expect(dependencyManager.DeliverCall.Receives.Dependency).To(Equal(postal.Dependency{
 			ID:      "dep",
 			Name:    "dep-dependency-name",
 			SHA256:  "dep-dependency-sha",
@@ -168,17 +156,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			URI:     "dep-dependency-uri",
 			Version: "dep-dependency-version",
 		}))
-		Expect(dependencyManager.InstallCall.Receives.CnbPath).To(Equal(cnbDir))
-		Expect(dependencyManager.InstallCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "dep")))
-
-		Expect(planRefinery.BillOfMaterialsCall.Receives.Dependency).To(Equal(postal.Dependency{
-			ID:      "dep",
-			Name:    "dep-dependency-name",
-			SHA256:  "dep-dependency-sha",
-			Stacks:  []string{"some-stack"},
-			URI:     "dep-dependency-uri",
-			Version: "dep-dependency-version",
-		}))
+		Expect(dependencyManager.DeliverCall.Receives.CnbPath).To(Equal(cnbDir))
+		Expect(dependencyManager.DeliverCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "dep")))
+		Expect(dependencyManager.DeliverCall.Receives.PlatformPath).To(Equal("platform"))
 
 		Expect(buffer.String()).To(ContainSubstring("Some Buildpack some-version"))
 		Expect(buffer.String()).To(ContainSubstring("Executing build process"))
@@ -225,19 +205,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(result).To(Equal(packit.BuildResult{
-				Plan: packit.BuildpackPlan{
-					Entries: []packit.BuildpackPlanEntry{
-						{
-							Name: "dep",
-							Metadata: map[string]interface{}{
-								"name":   "dep-dependency-name",
-								"sha256": "dep-dependency-sha",
-								"stacks": []string{"some-stack"},
-								"uri":    "dep-dependency-uri",
-							},
-						},
-					},
-				},
 				Layers: []packit.Layer{
 					{
 						Name:             "dep",
@@ -252,6 +219,32 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						Metadata: map[string]interface{}{
 							dep.DependencyCacheKey: "dep-dependency-sha",
 							"built_at":             timestamp.Format(time.RFC3339Nano),
+						},
+					},
+				},
+				Build: packit.BuildMetadata{
+					BOM: []packit.BOMEntry{
+						{
+							Name: "dep",
+							Metadata: map[string]interface{}{
+								"name":   "dep-dependency-name",
+								"sha256": "dep-dependency-sha",
+								"stacks": []string{"some-stack"},
+								"uri":    "dep-dependency-uri",
+							},
+						},
+					},
+				},
+				Launch: packit.LaunchMetadata{
+					BOM: []packit.BOMEntry{
+						{
+							Name: "dep",
+							Metadata: map[string]interface{}{
+								"name":   "dep-dependency-name",
+								"sha256": "dep-dependency-sha",
+								"stacks": []string{"some-stack"},
+								"uri":    "dep-dependency-uri",
+							},
 						},
 					},
 				},
@@ -288,7 +281,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		context("when the dependency cannot be installed", func() {
 			it.Before(func() {
-				dependencyManager.InstallCall.Returns.Error = errors.New("failed to install dependency")
+				dependencyManager.DeliverCall.Returns.Error = errors.New("failed to install dependency")
 			})
 
 			it("returns an error", func() {

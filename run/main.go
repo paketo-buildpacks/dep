@@ -20,7 +20,6 @@ func main() {
 		dep.Build(
 			draft.NewPlanner(),
 			postal.NewService(cargo.NewTransport()),
-			dep.NewPlanRefinery(),
 			chronos.DefaultClock,
 			logEmitter,
 		),
