@@ -19,7 +19,8 @@ type EntryResolver interface {
 //go:generate faux --interface DependencyManager --output fakes/dependency_manager.go
 type DependencyManager interface {
 	Resolve(path, id, version, stack string) (postal.Dependency, error)
-	Install(dependency postal.Dependency, cnbPath, layerPath string) error
+	Deliver(dependency postal.Dependency, cnbPath, layerPath, platformPath string) error
+	GenerateBillOfMaterials(dependencies ...postal.Dependency) []packit.BOMEntry
 }
 
 //go:generate faux --interface BuildPlanRefinery --output fakes/build_plan_refinery.go
@@ -29,8 +30,7 @@ type BuildPlanRefinery interface {
 
 func Build(
 	entryResolver EntryResolver,
-	dependencies DependencyManager,
-	planRefinery BuildPlanRefinery,
+	dependencyManager DependencyManager,
 	clock chronos.Clock,
 	logger scribe.Emitter,
 ) packit.BuildFunc {
@@ -44,7 +44,7 @@ func Build(
 			version = "default"
 		}
 
-		dependency, err := dependencies.Resolve(
+		dependency, err := dependencyManager.Resolve(
 			filepath.Join(context.CNBPath, "buildpack.toml"),
 			entry.Name,
 			version,
@@ -53,7 +53,19 @@ func Build(
 			return packit.BuildResult{}, err
 		}
 
-		bom := planRefinery.BillOfMaterials(dependency)
+		bom := dependencyManager.GenerateBillOfMaterials(dependency)
+
+		launch, build := entryResolver.MergeLayerTypes(Dep, context.Plan.Entries)
+
+		var buildMetadata = packit.BuildMetadata{}
+		var launchMetadata = packit.LaunchMetadata{}
+		if build {
+			buildMetadata = packit.BuildMetadata{BOM: bom}
+		}
+
+		if launch {
+			launchMetadata = packit.LaunchMetadata{BOM: bom}
+		}
 
 		depLayer, err := context.Layers.Get(Dep)
 		if err != nil {
@@ -65,11 +77,12 @@ func Build(
 			logger.Process("Reusing cached layer %s", depLayer.Path)
 			logger.Break()
 
+			depLayer.Launch, depLayer.Build, depLayer.Cache = launch, build, build
+
 			return packit.BuildResult{
-				Plan: packit.BuildpackPlan{
-					Entries: []packit.BuildpackPlanEntry{bom},
-				},
 				Layers: []packit.Layer{depLayer},
+				Build:  buildMetadata,
+				Launch: launchMetadata,
 			}, nil
 		}
 
@@ -80,13 +93,12 @@ func Build(
 			return packit.BuildResult{}, err
 		}
 
-		depLayer.Launch, depLayer.Build = entryResolver.MergeLayerTypes(Dep, context.Plan.Entries)
-		depLayer.Cache = depLayer.Build
+		depLayer.Launch, depLayer.Build, depLayer.Cache = launch, build, build
 
 		logger.Subprocess("Installing Dep")
 
 		duration, err := clock.Measure(func() error {
-			return dependencies.Install(dependency, context.CNBPath, depLayer.Path)
+			return dependencyManager.Deliver(dependency, context.CNBPath, depLayer.Path, context.Platform.Path)
 		})
 		if err != nil {
 			return packit.BuildResult{}, err
@@ -101,12 +113,9 @@ func Build(
 		}
 
 		return packit.BuildResult{
-			Plan: packit.BuildpackPlan{
-				Entries: []packit.BuildpackPlanEntry{bom},
-			},
-			Layers: []packit.Layer{
-				depLayer,
-			},
+			Layers: []packit.Layer{depLayer},
+			Build:  buildMetadata,
+			Launch: launchMetadata,
 		}, nil
 	}
 }
