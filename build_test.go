@@ -72,11 +72,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		dependencyManager.GenerateBillOfMaterialsCall.Returns.BOMEntrySlice = []packit.BOMEntry{
 			{
 				Name: "dep",
-				Metadata: map[string]interface{}{
-					"name":   "dep-dependency-name",
-					"sha256": "dep-dependency-sha",
-					"stacks": []string{"some-stack"},
-					"uri":    "dep-dependency-uri",
+				Metadata: packit.BOMMetadata{
+					Checksum: packit.BOMChecksum{
+						Algorithm: packit.SHA256,
+						Hash:      "dep-dependency-sha",
+					},
+					URI:     "dep-dependency-uri",
+					Version: "dep-dependency-version",
 				},
 			},
 		}
@@ -226,11 +228,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					BOM: []packit.BOMEntry{
 						{
 							Name: "dep",
-							Metadata: map[string]interface{}{
-								"name":   "dep-dependency-name",
-								"sha256": "dep-dependency-sha",
-								"stacks": []string{"some-stack"},
-								"uri":    "dep-dependency-uri",
+							Metadata: packit.BOMMetadata{
+								Checksum: packit.BOMChecksum{
+									Algorithm: packit.SHA256,
+									Hash:      "dep-dependency-sha",
+								},
+								URI:     "dep-dependency-uri",
+								Version: "dep-dependency-version",
 							},
 						},
 					},
@@ -239,13 +243,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					BOM: []packit.BOMEntry{
 						{
 							Name: "dep",
-							Metadata: map[string]interface{}{
-								"name":   "dep-dependency-name",
-								"sha256": "dep-dependency-sha",
-								"stacks": []string{"some-stack"},
-								"uri":    "dep-dependency-uri",
-							},
-						},
+							Metadata: packit.BOMMetadata{
+								Checksum: packit.BOMChecksum{
+									Algorithm: packit.SHA256,
+									Hash:      "dep-dependency-sha",
+								},
+								URI:     "dep-dependency-uri",
+								Version: "dep-dependency-version",
+							}},
 					},
 				},
 			}))
