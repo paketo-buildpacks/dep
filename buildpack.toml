@@ -27,7 +27,4 @@ api = "0.5"
   id = "io.buildpacks.stacks.bionic"
 
 [[stacks]]
-  id = "org.cloudfoundry.stacks.cflinuxfs3"
-
-[[stacks]]
   id = "io.paketo.stacks.tiny"
