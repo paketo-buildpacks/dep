@@ -111,7 +111,7 @@ func Build(
 		logger.GeneratingSBOM(depLayer.Path)
 		var sbomContent sbom.SBOM
 		duration, err = clock.Measure(func() error {
-			sbomContent, err = sbomGenerator.GenerateFromDependency(dependency, context.WorkingDir)
+			sbomContent, err = sbomGenerator.GenerateFromDependency(dependency, depLayer.Path)
 			return err
 		})
 		if err != nil {
