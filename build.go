@@ -108,8 +108,7 @@ func Build(
 		logger.Action("Completed in %s", duration.Round(time.Millisecond))
 		logger.Break()
 
-		// TODO: Make logging conform to shared format
-		logger.Process("Generating SBOM for directory %s", depLayer.Path)
+		logger.GeneratingSBOM(depLayer.Path)
 		var sbomContent sbom.SBOM
 		duration, err = clock.Measure(func() error {
 			sbomContent, err = sbomGenerator.GenerateFromDependency(dependency, context.WorkingDir)
@@ -122,6 +121,7 @@ func Build(
 		logger.Action("Completed in %s", duration.Round(time.Millisecond))
 		logger.Break()
 
+		logger.FormattingSBOM(context.BuildpackInfo.SBOMFormats...)
 		depLayer.SBOM, err = sbomContent.InFormats(context.BuildpackInfo.SBOMFormats...)
 		if err != nil {
 			return packit.BuildResult{}, err

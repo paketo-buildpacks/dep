@@ -70,6 +70,9 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 					buildpack,
 					buildPlanBuildpack,
 				).
+				WithEnv(map[string]string{
+					"BP_LOG_LEVEL": "DEBUG",
+				}).
 				WithSBOMOutputDir(sbomDir).
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred(), logs.String())
@@ -79,6 +82,15 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 				"  Executing build process",
 				"    Installing Dep",
 				MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
+				"",
+				fmt.Sprintf("  Generating SBOM for directory /layers/%s/dep", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
+				MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
+				"",
+				"  Writing SBOM in the following format(s):",
+				"    application/vnd.cyclonedx+json",
+				"    application/spdx+json",
+				"    application/vnd.syft+json",
+				"",
 			))
 
 			container, err = docker.Container.Run.WithCommand("dep --help && sleep infinity").Execute(image.ID)
