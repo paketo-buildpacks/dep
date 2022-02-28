@@ -21,6 +21,7 @@ type EntryResolver interface {
 type DependencyManager interface {
 	Resolve(path, id, version, stack string) (postal.Dependency, error)
 	Deliver(dependency postal.Dependency, cnbPath, layerPath, platformPath string) error
+	GenerateBillOfMaterials(dependencies ...postal.Dependency) []packit.BOMEntry
 }
 
 //go:generate faux --interface SBOMGenerator --output fakes/sbom_generator.go
@@ -53,12 +54,23 @@ func Build(
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
+		bom := dependencyManager.GenerateBillOfMaterials(dependency)
 
 		launch, build := entryResolver.MergeLayerTypes(Dep, context.Plan.Entries)
 
 		depLayer, err := context.Layers.Get(Dep)
 		if err != nil {
 			return packit.BuildResult{}, err
+		}
+
+		var buildMetadata = packit.BuildMetadata{}
+		var launchMetadata = packit.LaunchMetadata{}
+		if build {
+			buildMetadata = packit.BuildMetadata{BOM: bom}
+		}
+
+		if launch {
+			launchMetadata = packit.LaunchMetadata{BOM: bom}
 		}
 
 		cachedSHA, ok := depLayer.Metadata[DependencyCacheKey].(string)
@@ -70,6 +82,8 @@ func Build(
 
 			return packit.BuildResult{
 				Layers: []packit.Layer{depLayer},
+				Build:  buildMetadata,
+				Launch: launchMetadata,
 			}, nil
 		}
 
@@ -94,6 +108,7 @@ func Build(
 		logger.Action("Completed in %s", duration.Round(time.Millisecond))
 		logger.Break()
 
+		// TODO: Make logging conform to shared format
 		logger.Process("Generating SBOM for directory %s", depLayer.Path)
 		var sbomContent sbom.SBOM
 		duration, err = clock.Measure(func() error {
@@ -119,6 +134,8 @@ func Build(
 
 		return packit.BuildResult{
 			Layers: []packit.Layer{depLayer},
+			Build:  buildMetadata,
+			Launch: launchMetadata,
 		}, nil
 	}
 }
