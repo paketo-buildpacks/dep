@@ -34,12 +34,17 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 			container    occam.Container
 			name         string
 			source       string
+			sbomDir      string
 		)
 
 		it.Before(func() {
 			var err error
 			name, err = occam.RandomName()
 			Expect(err).NotTo(HaveOccurred())
+
+			sbomDir, err = os.MkdirTemp("", "sbom")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.Chmod(sbomDir, os.ModePerm)).To(Succeed())
 
 			containerIDs = map[string]struct{}{}
 		})
@@ -65,6 +70,7 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 					buildpack,
 					buildPlanBuildpack,
 				).
+				WithSBOMOutputDir(sbomDir).
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred(), logs.String())
 
@@ -85,10 +91,9 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 				return cLogs.String()
 			}).Should(ContainSubstring("Dep is a tool for managing dependencies for Go projects"))
 
-			// check that all expected SBOM files are present
+			// check that legacy SBOM is included via metadata
 			container, err = docker.Container.Run.
-				WithCommand(fmt.Sprintf("ls -al /layers/sbom/launch/%s/dep/",
-					strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))).
+				WithCommand("cat /layers/config/metadata.toml").
 				Execute(image.ID)
 			Expect(err).NotTo(HaveOccurred())
 			containerIDs[container.ID] = struct{}{}
@@ -98,24 +103,20 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				return cLogs.String()
 			}).Should(And(
-				ContainSubstring("sbom.cdx.json"),
-				ContainSubstring("sbom.spdx.json"),
-				ContainSubstring("sbom.syft.json"),
+				ContainSubstring("[[bom]]"),
+				ContainSubstring(`name = "Dep`),
+				ContainSubstring("[bom.metadata]"),
 			))
 
-			// check an SBOM file to make sure it has an entry for dep
-			container, err = docker.Container.Run.
-				WithCommand(fmt.Sprintf("cat /layers/sbom/launch/%s/dep/sbom.cdx.json",
-					strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))).
-				Execute(image.ID)
-			Expect(err).NotTo(HaveOccurred())
-			containerIDs[container.ID] = struct{}{}
+			// check that all required SBOM files are present
+			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"), "dep", "sbom.cdx.json")).To(BeARegularFile())
+			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"), "dep", "sbom.spdx.json")).To(BeARegularFile())
+			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"), "dep", "sbom.syft.json")).To(BeARegularFile())
 
-			Eventually(func() string {
-				cLogs, err := docker.Container.Logs.Execute(container.ID)
-				Expect(err).NotTo(HaveOccurred())
-				return cLogs.String()
-			}).Should(ContainSubstring(`"name": "Dep"`))
+			// check an SBOM file to make sure it has an entry for go
+			contents, err := os.ReadFile(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"), "dep", "sbom.cdx.json"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(ContainSubstring(`"name": "Dep"`))
 		})
 	})
 }

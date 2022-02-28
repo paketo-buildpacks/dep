@@ -12,6 +12,9 @@ import (
 	"github.com/paketo-buildpacks/dep/fakes"
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
+
+	//nolint Ignore SA1019, informed usage of deprecated package
+	"github.com/paketo-buildpacks/packit/v2/paketosbom"
 	"github.com/paketo-buildpacks/packit/v2/postal"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
@@ -72,6 +75,19 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Stacks:  []string{"some-stack"},
 			URI:     "dep-dependency-uri",
 			Version: "dep-dependency-version",
+		}
+		dependencyManager.GenerateBillOfMaterialsCall.Returns.BOMEntrySlice = []packit.BOMEntry{
+			{
+				Name: "dep",
+				Metadata: paketosbom.BOMMetadata{
+					Version: "dep-dependency-version",
+					Checksum: paketosbom.BOMChecksum{
+						Algorithm: paketosbom.SHA256,
+						Hash:      "dep-dependency-sha",
+					},
+					URI: "dep-dependency-uri",
+				},
+			},
 		}
 
 		build = dep.Build(entryResolver, dependencyManager, sbomGenerator, clock, logEmitter)
@@ -155,6 +171,17 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(dependencyManager.DeliverCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "dep")))
 		Expect(dependencyManager.DeliverCall.Receives.PlatformPath).To(Equal("platform"))
 
+		Expect(dependencyManager.GenerateBillOfMaterialsCall.Receives.Dependencies).To(Equal([]postal.Dependency{
+			{
+				ID:      "dep",
+				Name:    "dep-dependency-name",
+				SHA256:  "dep-dependency-sha",
+				Stacks:  []string{"some-stack"},
+				URI:     "dep-dependency-uri",
+				Version: "dep-dependency-version",
+			},
+		}))
+
 		Expect(sbomGenerator.GenerateFromDependencyCall.Receives.Dependency).To(Equal(postal.Dependency{
 			ID:      "dep",
 			Name:    "dep-dependency-name",
@@ -214,6 +241,30 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(layer.Build).To(BeTrue())
 			Expect(layer.Cache).To(BeTrue())
 			Expect(layer.Launch).To(BeTrue())
+
+			Expect(result.Build.BOM).To(HaveLen(1))
+			buildBOMEntry := result.Build.BOM[0]
+			Expect(buildBOMEntry.Name).To(Equal("dep"))
+			Expect(buildBOMEntry.Metadata).To(Equal(paketosbom.BOMMetadata{
+				Version: "dep-dependency-version",
+				Checksum: paketosbom.BOMChecksum{
+					Algorithm: paketosbom.SHA256,
+					Hash:      "dep-dependency-sha",
+				},
+				URI: "dep-dependency-uri",
+			}))
+
+			Expect(result.Launch.BOM).To(HaveLen(1))
+			launchBOMEntry := result.Launch.BOM[0]
+			Expect(launchBOMEntry.Name).To(Equal("dep"))
+			Expect(launchBOMEntry.Metadata).To(Equal(paketosbom.BOMMetadata{
+				Version: "dep-dependency-version",
+				Checksum: paketosbom.BOMChecksum{
+					Algorithm: paketosbom.SHA256,
+					Hash:      "dep-dependency-sha",
+				},
+				URI: "dep-dependency-uri",
+			}))
 
 			Expect(dependencyManager.ResolveCall.Receives.Path).To(Equal(filepath.Join(cnbDir, "buildpack.toml")))
 			Expect(dependencyManager.ResolveCall.Receives.Id).To(Equal("dep"))
