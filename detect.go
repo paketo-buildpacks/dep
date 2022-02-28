@@ -1,6 +1,6 @@
 package dep
 
-import "github.com/paketo-buildpacks/packit"
+import "github.com/paketo-buildpacks/packit/v2"
 
 func Detect() packit.DetectFunc {
 	return func(context packit.DetectContext) (packit.DetectResult, error) {

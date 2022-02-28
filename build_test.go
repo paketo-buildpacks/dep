@@ -10,10 +10,11 @@ import (
 
 	"github.com/paketo-buildpacks/dep"
 	"github.com/paketo-buildpacks/dep/fakes"
-	"github.com/paketo-buildpacks/packit"
-	"github.com/paketo-buildpacks/packit/chronos"
-	"github.com/paketo-buildpacks/packit/postal"
-	"github.com/paketo-buildpacks/packit/scribe"
+	"github.com/paketo-buildpacks/packit/v2"
+	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/postal"
+	"github.com/paketo-buildpacks/packit/v2/sbom"
+	"github.com/paketo-buildpacks/packit/v2/scribe"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -23,11 +24,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		layersDir  string
-		workingDir string
-		cnbDir     string
-		timestamp  time.Time
-		buffer     *bytes.Buffer
+		layersDir     string
+		workingDir    string
+		cnbDir        string
+		timestamp     time.Time
+		buffer        *bytes.Buffer
+		sbomGenerator *fakes.SBOMGenerator
 
 		entryResolver     *fakes.EntryResolver
 		dependencyManager *fakes.DependencyManager
@@ -54,6 +56,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			return timestamp
 		})
 
+		sbomGenerator = &fakes.SBOMGenerator{}
+		sbomGenerator.GenerateFromDependencyCall.Returns.SBOM = sbom.SBOM{}
+
 		entryResolver = &fakes.EntryResolver{}
 		entryResolver.ResolveCall.Returns.BuildpackPlanEntry = packit.BuildpackPlanEntry{
 			Name: "dep",
@@ -69,21 +74,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Version: "dep-dependency-version",
 		}
 
-		dependencyManager.GenerateBillOfMaterialsCall.Returns.BOMEntrySlice = []packit.BOMEntry{
-			{
-				Name: "dep",
-				Metadata: packit.BOMMetadata{
-					Checksum: packit.BOMChecksum{
-						Algorithm: packit.SHA256,
-						Hash:      "dep-dependency-sha",
-					},
-					URI:     "dep-dependency-uri",
-					Version: "dep-dependency-version",
-				},
-			},
-		}
-
-		build = dep.Build(entryResolver, dependencyManager, clock, logEmitter)
+		build = dep.Build(entryResolver, dependencyManager, sbomGenerator, clock, logEmitter)
 	})
 
 	it.After(func() {
@@ -98,8 +89,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			CNBPath:    cnbDir,
 			Stack:      "some-stack",
 			BuildpackInfo: packit.BuildpackInfo{
-				Name:    "Some Buildpack",
-				Version: "some-version",
+				Name:        "Some Buildpack",
+				Version:     "some-version",
+				SBOMFormats: []string{sbom.CycloneDXFormat, sbom.SPDXFormat},
 			},
 			Plan: packit.BuildpackPlan{
 				Entries: []packit.BuildpackPlanEntry{
@@ -113,23 +105,24 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result).To(Equal(packit.BuildResult{
-			Layers: []packit.Layer{
-				{
-					Name:             "dep",
-					Path:             filepath.Join(layersDir, "dep"),
-					SharedEnv:        packit.Environment{},
-					BuildEnv:         packit.Environment{},
-					LaunchEnv:        packit.Environment{},
-					ProcessLaunchEnv: map[string]packit.Environment{},
-					Build:            false,
-					Launch:           false,
-					Cache:            false,
-					Metadata: map[string]interface{}{
-						dep.DependencyCacheKey: "dep-dependency-sha",
-						"built_at":             timestamp.Format(time.RFC3339Nano),
-					},
-				},
+		Expect(result.Layers).To(HaveLen(1))
+		layer := result.Layers[0]
+
+		Expect(layer.Name).To(Equal("dep"))
+		Expect(layer.Path).To(Equal(filepath.Join(layersDir, "dep")))
+		Expect(layer.Metadata).To(Equal(map[string]interface{}{
+			"dependency-sha": "dep-dependency-sha",
+			"built_at":       timestamp.Format(time.RFC3339Nano),
+		}))
+
+		Expect(layer.SBOM.Formats()).To(Equal([]packit.SBOMFormat{
+			{
+				Extension: sbom.Format(sbom.CycloneDXFormat).Extension(),
+				Content:   sbom.NewFormattedReader(sbom.SBOM{}, sbom.CycloneDXFormat),
+			},
+			{
+				Extension: sbom.Format(sbom.SPDXFormat).Extension(),
+				Content:   sbom.NewFormattedReader(sbom.SBOM{}, sbom.SPDXFormat),
 			},
 		}))
 
@@ -161,6 +154,16 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(dependencyManager.DeliverCall.Receives.CnbPath).To(Equal(cnbDir))
 		Expect(dependencyManager.DeliverCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "dep")))
 		Expect(dependencyManager.DeliverCall.Receives.PlatformPath).To(Equal("platform"))
+
+		Expect(sbomGenerator.GenerateFromDependencyCall.Receives.Dependency).To(Equal(postal.Dependency{
+			ID:      "dep",
+			Name:    "dep-dependency-name",
+			SHA256:  "dep-dependency-sha",
+			Stacks:  []string{"some-stack"},
+			URI:     "dep-dependency-uri",
+			Version: "dep-dependency-version",
+		}))
+		Expect(sbomGenerator.GenerateFromDependencyCall.Receives.Dir).To(Equal(workingDir))
 
 		Expect(buffer.String()).To(ContainSubstring("Some Buildpack some-version"))
 		Expect(buffer.String()).To(ContainSubstring("Executing build process"))
@@ -206,54 +209,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(result).To(Equal(packit.BuildResult{
-				Layers: []packit.Layer{
-					{
-						Name:             "dep",
-						Path:             filepath.Join(layersDir, "dep"),
-						SharedEnv:        packit.Environment{},
-						BuildEnv:         packit.Environment{},
-						LaunchEnv:        packit.Environment{},
-						ProcessLaunchEnv: map[string]packit.Environment{},
-						Build:            true,
-						Launch:           true,
-						Cache:            true,
-						Metadata: map[string]interface{}{
-							dep.DependencyCacheKey: "dep-dependency-sha",
-							"built_at":             timestamp.Format(time.RFC3339Nano),
-						},
-					},
-				},
-				Build: packit.BuildMetadata{
-					BOM: []packit.BOMEntry{
-						{
-							Name: "dep",
-							Metadata: packit.BOMMetadata{
-								Checksum: packit.BOMChecksum{
-									Algorithm: packit.SHA256,
-									Hash:      "dep-dependency-sha",
-								},
-								URI:     "dep-dependency-uri",
-								Version: "dep-dependency-version",
-							},
-						},
-					},
-				},
-				Launch: packit.LaunchMetadata{
-					BOM: []packit.BOMEntry{
-						{
-							Name: "dep",
-							Metadata: packit.BOMMetadata{
-								Checksum: packit.BOMChecksum{
-									Algorithm: packit.SHA256,
-									Hash:      "dep-dependency-sha",
-								},
-								URI:     "dep-dependency-uri",
-								Version: "dep-dependency-version",
-							}},
-					},
-				},
-			}))
+			Expect(result.Layers).To(HaveLen(1))
+			layer := result.Layers[0]
+			Expect(layer.Build).To(BeTrue())
+			Expect(layer.Cache).To(BeTrue())
+			Expect(layer.Launch).To(BeTrue())
 
 			Expect(dependencyManager.ResolveCall.Receives.Path).To(Equal(filepath.Join(cnbDir, "buildpack.toml")))
 			Expect(dependencyManager.ResolveCall.Receives.Id).To(Equal("dep"))
@@ -324,6 +284,43 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Layers: packit.Layers{Path: layersDir},
 				})
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
+			})
+		})
+
+		context("when generating the SBOM returns an error", func() {
+			it.Before(func() {
+				sbomGenerator.GenerateFromDependencyCall.Returns.Error = errors.New("failed to generate SBOM")
+			})
+
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath: cnbDir,
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{Name: "yarn"},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+					Stack:  "some-stack",
+				})
+				Expect(err).To(MatchError(ContainSubstring("failed to generate SBOM")))
+			})
+		})
+
+		context("formatting the SBOM returns an error", func() {
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					BuildpackInfo: packit.BuildpackInfo{SBOMFormats: []string{"random-format"}},
+					CNBPath:       cnbDir,
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{Name: "dep"},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+					Stack:  "some-stack",
+				})
+				Expect(err).To(MatchError("\"random-format\" is not a supported SBOM format"))
 			})
 		})
 	})
