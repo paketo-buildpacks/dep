@@ -20,7 +20,7 @@ func (f Generator) GenerateFromDependency(dependency postal.Dependency, path str
 }
 
 func main() {
-	logEmitter := scribe.NewEmitter(os.Stdout)
+	logEmitter := scribe.NewEmitter(os.Stdout).WithLevel(os.Getenv("BP_LOG_LEVEL"))
 
 	packit.Run(
 		dep.Detect(),
