@@ -1,9 +1,10 @@
-api = "0.6"
+api = "0.7"
 
 [buildpack]
   homepage = "https://github.com/paketo-buildpacks/dep"
   id = "paketo-buildpacks/dep"
   name = "Paketo Dep Buildpack"
+  sbom-formats = ["application/vnd.cyclonedx+json","application/spdx+json","application/vnd.syft+json"]
 
   [[buildpack.licenses]]
     type = "Apache-2.0"
@@ -14,8 +15,11 @@ api = "0.6"
   pre-package = "./scripts/build.sh"
 
   [[metadata.dependencies]]
+    cpe = "cpe:2.3:a:golang:dep:0.5.4:*:*:*:*:*:*:*"
     id = "dep"
+    licenses = ["BSD-3-Clause"]
     name = "Dep"
+    purl = "pkg:generic/dep@0.5.4?checksum=929c8f759838f98323211ba408a831ea80d93b75beda8584b6d950f393a3298a&download_url=https://github.com/golang/dep/archive/v0.5.4.tar.gz"
     sha256 = "79b3ab9e67bf51bae787faaa5c78782752d0e39ea7b0d99e485a181b63a49559"
     source = "https://github.com/golang/dep/archive/v0.5.4.tar.gz"
     source_sha256 = "929c8f759838f98323211ba408a831ea80d93b75beda8584b6d950f393a3298a"
