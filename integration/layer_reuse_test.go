@@ -96,7 +96,7 @@ func testRebuildLayerReuse(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs.String()).NotTo(ContainSubstring("  Executing build process"))
 			Expect(logs.String()).To(ContainSubstring(fmt.Sprintf("  Reusing cached layer /layers/%s/dep", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 
-			Expect(secondImage.Buildpacks[0].Layers["dep"].Metadata["built_at"]).To(Equal(firstImage.Buildpacks[0].Layers["dep"].Metadata["built_at"]))
+			Expect(secondImage.Buildpacks[0].Layers["dep"].SHA).To(Equal(firstImage.Buildpacks[0].Layers["dep"].SHA))
 		})
 	})
 }

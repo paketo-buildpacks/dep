@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/paketo-buildpacks/dep"
 	"github.com/paketo-buildpacks/dep/fakes"
@@ -30,7 +29,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		layersDir     string
 		workingDir    string
 		cnbDir        string
-		timestamp     time.Time
 		buffer        *bytes.Buffer
 		sbomGenerator *fakes.SBOMGenerator
 
@@ -53,11 +51,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		buffer = bytes.NewBuffer(nil)
 		logEmitter := scribe.NewEmitter(buffer)
-
-		timestamp = time.Now()
-		clock := chronos.NewClock(func() time.Time {
-			return timestamp
-		})
 
 		sbomGenerator = &fakes.SBOMGenerator{}
 		sbomGenerator.GenerateFromDependencyCall.Returns.SBOM = sbom.SBOM{}
@@ -90,7 +83,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			},
 		}
 
-		build = dep.Build(entryResolver, dependencyManager, sbomGenerator, clock, logEmitter)
+		build = dep.Build(entryResolver, dependencyManager, sbomGenerator, chronos.DefaultClock, logEmitter)
 	})
 
 	it.After(func() {
@@ -128,7 +121,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(layer.Path).To(Equal(filepath.Join(layersDir, "dep")))
 		Expect(layer.Metadata).To(Equal(map[string]interface{}{
 			"dependency-sha": "dep-dependency-sha",
-			"built_at":       timestamp.Format(time.RFC3339Nano),
 		}))
 
 		Expect(layer.SBOM.Formats()).To(Equal([]packit.SBOMFormat{
