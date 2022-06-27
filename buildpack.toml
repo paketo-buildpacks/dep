@@ -4,8 +4,8 @@ api = "0.8"
   description = "A buildpack for installing the Dep tool"
   homepage = "https://github.com/paketo-buildpacks/dep"
   id = "paketo-buildpacks/dep"
-  name = "Paketo Dep Buildpack"
   keywords = ["go", "dep"]
+  name = "Paketo Dep Buildpack"
   sbom-formats = ["application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json"]
 
   [[buildpack.licenses]]
