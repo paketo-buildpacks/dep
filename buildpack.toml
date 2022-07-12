@@ -23,7 +23,7 @@ api = "0.7"
     sha256 = "79b3ab9e67bf51bae787faaa5c78782752d0e39ea7b0d99e485a181b63a49559"
     source = "https://github.com/golang/dep/archive/v0.5.4.tar.gz"
     source_sha256 = "929c8f759838f98323211ba408a831ea80d93b75beda8584b6d950f393a3298a"
-    stacks = ["org.cloudfoundry.stacks.cflinuxfs3", "io.buildpacks.stacks.bionic", "io.paketo.stacks.tiny"]
+    stacks = ["org.cloudfoundry.stacks.cflinuxfs3", "io.buildpacks.stacks.bionic", "io.paketo.stacks.tiny", "io.buildpacks.stacks.jammy.tiny" ]
     uri = "https://buildpacks.cloudfoundry.org/dependencies/dep/dep-v0.5.4-linux-x64-cflinuxfs3-79b3ab9e.tgz"
     version = "0.5.4"
 
@@ -32,3 +32,6 @@ api = "0.7"
 
 [[stacks]]
   id = "io.paketo.stacks.tiny"
+
+[[stacks]]
+  id = "io.buildpacks.stacks.jammy.tiny"
