@@ -5,7 +5,7 @@ api = "0.7"
   homepage = "https://github.com/paketo-buildpacks/dep"
   id = "paketo-buildpacks/dep"
   keywords = ["go", "dep"]
-  name = "Paketo Dep Buildpack"
+  name = "Paketo Buildpack for Dep"
   sbom-formats = ["application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json"]
 
   [[buildpack.licenses]]
