@@ -185,7 +185,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(sbomGenerator.GenerateFromDependencyCall.Receives.Dir).To(Equal(filepath.Join(layersDir, "dep")))
 
 		Expect(buffer.String()).To(ContainSubstring("Some Buildpack some-version"))
-		Expect(buffer.String()).To(ContainSubstring("WARNING: This buildpack is deprecated. It will be removed within 30 days. See https://github.com/paketo-buildpacks/go/issues/622."))
 		Expect(buffer.String()).To(ContainSubstring("Executing build process"))
 	})
 
